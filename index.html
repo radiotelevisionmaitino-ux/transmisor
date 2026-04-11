@@ -125,22 +125,17 @@
     
     let peerIds = { mov1: null, mov2: null }; 
     let m1Muted = false, m2Muted = false;
-
     let activeDataConns = {};
 
     function updateMainClock() {
         const now = new Date();
         const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
         const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-        
         const fechaLineal = `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
         const horaLineal = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-        
         document.getElementById('main-clock').innerText = `${fechaLineal} ${horaLineal}`.toUpperCase();
     }
-    
-    updateMainClock();
-    setInterval(updateMainClock, 1000);
+    updateMainClock(); setInterval(updateMainClock, 1000);
 
     function formatTime(ms) {
         let sec = Math.floor(ms / 1000);
@@ -149,8 +144,7 @@
 
     function formatMinSec(seconds) {
         if (isNaN(seconds) || !isFinite(seconds)) return "00:00";
-        let m = Math.floor(seconds / 60);
-        let s = Math.floor(seconds % 60);
+        let m = Math.floor(seconds / 60); let s = Math.floor(seconds % 60);
         return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
@@ -159,7 +153,6 @@
             const aud = document.getElementById('aud' + id);
             const curr = document.getElementById('time-curr-' + id);
             const tot = document.getElementById('time-tot-' + id);
-
             aud.addEventListener('loadedmetadata', () => tot.innerText = formatMinSec(aud.duration));
             aud.addEventListener('timeupdate', () => curr.innerText = formatMinSec(aud.currentTime));
         });
@@ -167,39 +160,24 @@
     setupDeckTimers();
 
     async function init() {
-        if(isInit) return;
-        if(isInitializing) return; 
+        if(isInit || isInitializing) return;
         isInitializing = true;
-
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            musicBus = audioCtx.createGain();
-            duckingGain = audioCtx.createGain(); 
-            musicBus.connect(duckingGain);
-
-            masterGain = audioCtx.createGain();
-            const limiter = audioCtx.createDynamicsCompressor();
+            musicBus = audioCtx.createGain(); duckingGain = audioCtx.createGain(); musicBus.connect(duckingGain);
+            masterGain = audioCtx.createGain(); const limiter = audioCtx.createDynamicsCompressor();
             limiter.threshold.value = -1.0; limiter.knee.value = 0; limiter.ratio.value = 20;
-            
-            duckingGain.connect(masterGain);
-            masterGain.connect(limiter);
-            limiter.connect(audioCtx.destination);
+            duckingGain.connect(masterGain); masterGain.connect(limiter); limiter.connect(audioCtx.destination);
 
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 48000 }
-            });
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 48000 } });
             const mSrc = audioCtx.createMediaStreamSource(stream);
-            
             micGain = audioCtx.createGain(); micGain.gain.value = 0;
             micComp = audioCtx.createDynamicsCompressor();
             micComp.threshold.value = -15; micComp.knee.value = 15; micComp.ratio.value = 2.5; 
             micComp.attack.value = 0.01; micComp.release.value = 0.15;
-
             mSrc.connect(micComp).connect(micGain).connect(masterGain);
 
-            masterDest = audioCtx.createMediaStreamDestination();
-            micMovDest = audioCtx.createMediaStreamDestination();
+            masterDest = audioCtx.createMediaStreamDestination(); micMovDest = audioCtx.createMediaStreamDestination();
             limiter.connect(masterDest);
 
             dAGain = audioCtx.createGain(); dBGain = audioCtx.createGain();
@@ -215,26 +193,26 @@
             liveDest = audioCtx.createMediaStreamDestination();
             masterGain.connect(liveGain).connect(liveDest);
 
-            analyzer = audioCtx.createAnalyser();
-            micComp.connect(analyzer);
+            analyzer = audioCtx.createAnalyser(); micComp.connect(analyzer);
 
+            // --- UNICO CAMBIO PARA BLINDAR CONEXIONES ---
             peer = new Peer('maitino-studio-host', {
                 config: {
                     'iceServers': [
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'turn:relay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                        { urls: 'turn:relay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
                     ]
                 }
             });
-            
+            // ---------------------------------------------
+
             peer.on('connection', conn => {
                 activeDataConns[conn.peer] = conn;
-
                 conn.on('data', data => {
-                    if(data.command === 'check_live') {
-                        if(isBroadcasting && !activeListenerCalls[conn.peer]) {
-                            iniciarLlamadaOyente(conn.peer);
-                        }
+                    if(data.command === 'check_live' && isBroadcasting && !activeListenerCalls[conn.peer]) {
+                        iniciarLlamadaOyente(conn.peer);
                     }
                     if(data.type === 'mic_status') {
                         const statId = (conn.peer === peerIds.mov1) ? 'm-stat' : (conn.peer === peerIds.mov2 ? 'm2-stat' : null);
@@ -244,13 +222,9 @@
                         }
                     }
                 });
-
                 conn.on('close', () => {
                     delete activeDataConns[conn.peer];
-                    if(activeListenerCalls[conn.peer]) {
-                        activeListenerCalls[conn.peer].close();
-                        delete activeListenerCalls[conn.peer];
-                    }
+                    if(activeListenerCalls[conn.peer]) { activeListenerCalls[conn.peer].close(); delete activeListenerCalls[conn.peer]; }
                 });
             });
 
@@ -260,31 +234,17 @@
                     const targetId = !document.getElementById('remote-audio').srcObject ? 'remote-audio' : 'remote-audio-2';
                     const statId = targetId === 'remote-audio' ? 'm-stat' : 'm2-stat';
                     const gainNode = targetId === 'remote-audio' ? movGain : mov2Gain;
-
-                    if(targetId === 'remote-audio') peerIds.mov1 = call.peer;
-                    else peerIds.mov2 = call.peer;
-
+                    if(targetId === 'remote-audio') peerIds.mov1 = call.peer; else peerIds.mov2 = call.peer;
                     document.getElementById(targetId).srcObject = s;
-                    const source = audioCtx.createMediaStreamSource(s);
-                    source.connect(gainNode);
-
-                    document.getElementById(statId).innerHTML = "● ONLINE";
-                    document.getElementById(statId).style.color = "#00ffaa";
+                    audioCtx.createMediaStreamSource(s).connect(gainNode);
+                    document.getElementById(statId).innerHTML = "● ONLINE"; document.getElementById(statId).style.color = "#00ffaa";
                 });
             });
 
             peer.on('disconnected', () => peer.reconnect());
-
-            isInit = true;
-            isInitializing = false;
-            updateGains();
-            visualize();
-            processDucking();
-
+            isInit = true; isInitializing = false; updateGains(); visualize(); processDucking();
         } catch (error) {
-            isInitializing = false;
-            console.error("Fallo al arrancar el motor de audio:", error);
-            alert("⚠️ FALLO CRÍTICO: Asegúrate de que el micrófono esté permitido.");
+            isInitializing = false; console.error(error); alert("⚠️ FALLO CRÍTICO: Micrófono no permitido.");
         }
     }
 
@@ -298,147 +258,76 @@
     function updateGains() {
         if(!isInit) return;
         micGain.gain.setTargetAtTime(document.getElementById('b-mic').classList.contains('active') ? document.getElementById('v-mic').value : 0, audioCtx.currentTime, 0.05);
-        dAGain.gain.value = document.getElementById('v-da').value;
-        dBGain.gain.value = document.getElementById('v-db').value;
+        dAGain.gain.value = document.getElementById('v-da').value; dBGain.gain.value = document.getElementById('v-db').value;
         movGain.gain.value = m1Muted ? 0 : document.getElementById('v-mov').value;
         mov2Gain.gain.value = m2Muted ? 0 : document.getElementById('v-mov2').value;
         masterGain.gain.value = document.getElementById('v-mas').value;
     }
 
-    async function toggleMic() {
-        await init();
-        if(!isInit) return;
-        document.getElementById('b-mic').classList.toggle('active');
-        document.getElementById('b-mic').innerText = document.getElementById('b-mic').classList.contains('active') ? "ABIERTO" : "CERRADO";
-        updateGains();
-    }
+    async function toggleMic() { await init(); document.getElementById('b-mic').classList.toggle('active'); document.getElementById('b-mic').innerText = document.getElementById('b-mic').classList.contains('active') ? "ABIERTO" : "CERRADO"; updateGains(); }
 
     async function toggleMov(num) {
-        await init();
-        if(!isInit) return;
-        if(num === 1) {
-            m1Muted = !m1Muted;
-            document.getElementById('b-mov1').innerText = m1Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov1').classList.toggle('active', m1Muted);
-        } else {
-            m2Muted = !m2Muted;
-            document.getElementById('b-mov2').innerText = m2Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov2').classList.toggle('active', m2Muted);
-        }
+        await init(); if(num === 1) { m1Muted = !m1Muted; document.getElementById('b-mov1').innerText = m1Muted ? "CERRADO" : "ABIERTO"; document.getElementById('b-mov1').classList.toggle('active', m1Muted); } 
+        else { m2Muted = !m2Muted; document.getElementById('b-mov2').innerText = m2Muted ? "CERRADO" : "ABIERTO"; document.getElementById('b-mov2').classList.toggle('active', m2Muted); }
         updateGains();
     }
 
-    function toggleDucking() {
-        isDucking = !isDucking;
-        const b = document.getElementById('b-duck');
-        b.classList.toggle('active');
-        b.innerText = isDucking ? "AUTO-DUCKING ON" : "AUTO-DUCKING OFF";
-    }
+    function toggleDucking() { isDucking = !isDucking; const b = document.getElementById('b-duck'); b.classList.toggle('active'); b.innerText = isDucking ? "AUTO-DUCKING ON" : "AUTO-DUCKING OFF"; }
 
     function processDucking() {
         const data = new Uint8Array(analyzer.frequencyBinCount);
         const check = () => {
             if(isDucking && document.getElementById('b-mic').classList.contains('active')) {
-                analyzer.getByteFrequencyData(data);
-                let avg = data.reduce((a,b) => a+b)/data.length;
-                let target = avg > 20 ? 0.4 : 1.0;
-                duckingGain.gain.setTargetAtTime(target, audioCtx.currentTime, 0.15);
-            } else {
-                duckingGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.2);
-            }
+                analyzer.getByteFrequencyData(data); let avg = data.reduce((a,b) => a+b)/data.length;
+                duckingGain.gain.setTargetAtTime(avg > 20 ? 0.4 : 1.0, audioCtx.currentTime, 0.15);
+            } else { duckingGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.2); }
             requestAnimationFrame(check);
-        };
-        check();
+        }; check();
     }
 
-    async function loadD(id, input) { 
-        await init(); 
-        if(!isInit) return;
-        document.getElementById('aud'+id).src = URL.createObjectURL(input.files[0]); 
-    }
+    async function loadD(id, input) { await init(); document.getElementById('aud'+id).src = URL.createObjectURL(input.files[0]); }
     
-    function playDeck(id) {
-        const p = document.getElementById('aud'+id);
-        const b = document.getElementById('p'+id);
-        if(p.paused) { p.play(); b.innerHTML = '<i class="fas fa-pause"></i>'; }
-        else { p.pause(); b.innerHTML = '<i class="fas fa-play"></i>'; }
-    }
+    function playDeck(id) { const p = document.getElementById('aud'+id); const b = document.getElementById('p'+id); if(p.paused) { p.play(); b.innerHTML = '<i class="fas fa-pause"></i>'; } else { p.pause(); b.innerHTML = '<i class="fas fa-play"></i>'; } }
 
-    function restartDeck(id) {
-        document.getElementById('aud'+id).currentTime = 0;
-    }
+    function restartDeck(id) { document.getElementById('aud'+id).currentTime = 0; }
 
-    function toggleLoop(id) {
-        const p = document.getElementById('aud'+id);
-        const b = document.getElementById('l'+id);
-        p.loop = !p.loop;
-        b.classList.toggle('active', p.loop);
-    }
+    function toggleLoop(id) { const p = document.getElementById('aud'+id); const b = document.getElementById('l'+id); p.loop = !p.loop; b.classList.toggle('active', p.loop); }
 
     async function toggleLive() {
-        await init(); 
-        if(!isInit) return; 
-
-        const b = document.getElementById('b-live');
+        await init(); const b = document.getElementById('b-live');
         if(!isBroadcasting) {
-            isBroadcasting = true;
-            liveGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 2);
-            b.innerText = "● EN EL AIRE"; b.style.background = "red";
-            startTimes.live = Date.now();
+            isBroadcasting = true; liveGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 2);
+            b.innerText = "● EN EL AIRE"; b.style.background = "red"; startTimes.live = Date.now();
             intervals.live = setInterval(() => document.getElementById('t-live').innerText = `📡 EN AIRE: ${formatTime(Date.now() - startTimes.live)}`, 1000);
-
-            for(let peerId in activeDataConns) {
-                if(!activeListenerCalls[peerId]) {
-                    iniciarLlamadaOyente(peerId);
-                }
-            }
+            for(let peerId in activeDataConns) { if(!activeListenerCalls[peerId]) iniciarLlamadaOyente(peerId); }
         } else {
-            isBroadcasting = false;
-            liveGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
-            
-            Object.values(activeListenerCalls).forEach(call => call.close());
-            activeListenerCalls = {};
-            
+            isBroadcasting = false; liveGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+            Object.values(activeListenerCalls).forEach(call => call.close()); activeListenerCalls = {};
             setTimeout(() => { b.innerText = "CONECTAR ANTENA"; b.style.background = "#00e676"; }, 2000);
-            clearInterval(intervals.live);
-            document.getElementById('t-live').innerText = "📡 EN AIRE: OFF";
+            clearInterval(intervals.live); document.getElementById('t-live').innerText = "📡 EN AIRE: OFF";
         }
     }
 
     async function rec(type) {
-        await init(); 
-        if(!isInit) return;
-
-        const b = document.getElementById('r-'+(type === 'master' ? 'mas' : type));
+        await init(); const b = document.getElementById('r-'+(type === 'master' ? 'mas' : type));
         if(!recorders[type]) {
             const st = (type === 'master') ? masterDest.stream : micMovDest.stream;
-            recorders[type] = new MediaRecorder(st, { audioBitsPerSecond: 256000 }); 
-            chunks[type] = [];
+            recorders[type] = new MediaRecorder(st, { audioBitsPerSecond: 256000 }); chunks[type] = [];
             recorders[type].ondataavailable = e => chunks[type].push(e.data);
             recorders[type].onstop = () => {
-                const blob = new Blob(chunks[type], {type: 'audio/webm'});
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                const blob = new Blob(chunks[type], {type: 'audio/webm'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
                 a.download = `MAITINO_${type.toUpperCase()}_${Date.now()}.webm`; a.click();
             };
-            recorders[type].start(); b.classList.add('active');
-            startTimes[type] = Date.now();
+            recorders[type].start(); b.classList.add('active'); startTimes[type] = Date.now();
             intervals[type] = setInterval(() => document.getElementById('t-'+type).innerText = `🔴 ${type.toUpperCase()}: ${formatTime(Date.now() - startTimes[type])}`, 1000);
-        } else {
-            recorders[type].stop(); delete recorders[type]; b.classList.remove('active');
-            clearInterval(intervals[type]);
-        }
+        } else { recorders[type].stop(); delete recorders[type]; b.classList.remove('active'); clearInterval(intervals[type]); }
     }
 
     function visualize() {
         const vAn = audioCtx.createAnalyser(); masterGain.connect(vAn);
         const cv = document.getElementById('cv-master'); const ct = cv.getContext('2d');
         const d = new Uint8Array(vAn.frequencyBinCount);
-        const frame = () => {
-            requestAnimationFrame(frame); vAn.getByteFrequencyData(d);
-            ct.fillStyle = '#000'; ct.fillRect(0,0,cv.width,cv.height);
-            ct.fillStyle = '#00ffaa';
-            for(let i=0; i<d.length; i+=12) ct.fillRect(i/4, cv.height, 3, -d[i]/4);
-        };
+        const frame = () => { requestAnimationFrame(frame); vAn.getByteFrequencyData(d); ct.fillStyle = '#000'; ct.fillRect(0,0,cv.width,cv.height); ct.fillStyle = '#00ffaa'; for(let i=0; i<d.length; i+=12) ct.fillRect(i/4, cv.height, 3, -d[i]/4); };
         frame();
     }
 </script>
