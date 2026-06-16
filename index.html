@@ -10,7 +10,7 @@
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .clock-display { font-family: monospace; font-size: 1.2rem; color: var(--accent); margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
         .master-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; width: 100%; max-width: 1700px; }
-        /* Cambiado a 8 columnas para acomodar los nuevos móviles */
+        
         .mixer { display: grid; grid-template-columns: repeat(8, 1fr); gap: 15px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid var(--border); }
         .strip { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 15px; border: 1px solid var(--border); text-align: center; display: flex; flex-direction: column; }
         .fader { -webkit-appearance: slider-vertical; width: 30px; height: 200px; margin: 15px auto; cursor: pointer; }
@@ -27,6 +27,28 @@
         .t-row.active { color: var(--danger); }
         .t-row.live-active { color: #00e676; }
         .deck-timer-container { display: flex; justify-content: space-between; font-size: 0.85rem; font-family: monospace; color: var(--accent); margin-top: 10px; padding: 0 5px; font-weight: bold;}
+
+        /* --- NUEVOS ESTILOS PARA LOS PANELES INFERIORES --- */
+        .bottom-panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 100%; max-width: 1700px; margin-top: 20px; }
+        .sub-panel { background: var(--panel); padding: 20px; border-radius: 15px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sub-panel h3 { margin-bottom: 15px; color: var(--accent); font-size: 0.85rem; }
+        
+        /* Visualizador Extendido */
+        #cv-extended { width: 100%; height: 120px; background: #000; border-radius: 8px; border: 1px solid var(--border); }
+        
+        /* Playlist */
+        .playlist-upload-btn { background: #2a2a30; border: 1px dashed var(--border); color: #888; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 0.8rem; flex: 1; }
+        .playlist-upload-btn:hover { border-color: var(--accent); color: #fff; }
+        .playlist-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 120px; border-radius: 5px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); }
+        .playlist-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #222; font-size: 0.75rem; color: #ccc; }
+        .playlist-item:last-child { border-bottom: none; }
+        .pl-actions button { background: #333; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px; }
+        .pl-actions button:hover { background: var(--accent); color: black; }
+        
+        /* Notas y Archivo */
+        .config-input { width: calc(100% - 20px); background: #000; border: 1px solid var(--border); color: #00ffaa; padding: 10px; border-radius: 5px; font-family: monospace; margin-bottom: 10px; }
+        .notes-area { flex: 1; width: calc(100% - 20px); background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 5px; resize: none; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        .notes-area:focus, .config-input:focus { outline: 1px solid var(--accent); }
     </style>
 </head>
 <body>
@@ -134,6 +156,33 @@
     </div>
 </div>
 
+<div class="bottom-panels">
+    <div class="sub-panel">
+        <h3><i class="fas fa-wave-square"></i> Analizador de Espectro MASTER</h3>
+        <canvas id="cv-extended"></canvas>
+    </div>
+
+    <div class="sub-panel">
+        <h3><i class="fas fa-list-ol"></i> Playlist Rápida</h3>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <div class="playlist-upload-btn" onclick="document.getElementById('pl-upload').click()">
+                <i class="fas fa-plus"></i> Añadir pistas
+            </div>
+            <button class="btn btn-duck" id="btn-autoplay" onclick="toggleAutoPlay()" style="margin-top: 0; flex: 1;">MODO AUTO: OFF</button>
+        </div>
+        <input type="file" id="pl-upload" hidden multiple accept="audio/*" onchange="handlePlaylistUpload(this)">
+        <ul class="playlist-list" id="pl-list">
+            <li style="padding:10px; color:#555; text-align:center; font-style:italic;" id="pl-empty">Lista vacía</li>
+        </ul>
+    </div>
+
+    <div class="sub-panel">
+        <h3><i class="fas fa-edit"></i> Guion & Nombre de Grabación</h3>
+        <input type="text" id="rec-filename" class="config-input" placeholder="Ej: MI_PROGRAMA_T01E05 (Nombre base)" title="Prefijo para los archivos grabados">
+        <textarea class="notes-area" placeholder="Escribe aquí tu escaleta, menciones publicitarias, recordatorios, o notas del programa..."></textarea>
+    </div>
+</div>
+
 <script>
     let audioCtx, masterGain, micGain, micComp, dAGain, dBGain, movGain, mov2Gain, mov3Gain, mov4Gain, musicBus, duckingGain;
     let masterDest, micMovDest, liveGain, liveDest, analyzer;
@@ -147,6 +196,11 @@
     let m1Muted = false, m2Muted = false, m3Muted = false, m4Muted = false;
 
     let activeDataConns = {};
+
+    // --- VARIABLES PLAYLIST AUTO ---
+    let isAutoPlay = false;
+    let playlistFilesArray = [];
+    let currentAutoIndex = -1;
 
     function updateMainClock() {
         const now = new Date();
@@ -189,11 +243,17 @@
                 curr.innerText = formatMinSec(aud.currentTime);
                 seek.value = aud.currentTime;
             });
+
+            // --- EVENTO PARA EL MODO AUTO ---
+            aud.addEventListener('ended', () => {
+                if (isAutoPlay) {
+                    playNextInAuto();
+                }
+            });
         });
     }
     setupDeckTimers();
 
-    // Nueva función para saltar de un lado a otro en las pistas
     function seekDeck(id) {
         const aud = document.getElementById('aud' + id);
         const seekVal = document.getElementById('seek-' + id).value;
@@ -240,7 +300,6 @@
             audioCtx.createMediaElementSource(document.getElementById('audA')).connect(dAGain).connect(musicBus);
             audioCtx.createMediaElementSource(document.getElementById('audB')).connect(dBGain).connect(musicBus);
 
-            // Nodos para los 4 móviles
             movGain = audioCtx.createGain(); 
             mov2Gain = audioCtx.createGain();
             mov3Gain = audioCtx.createGain();
@@ -333,6 +392,7 @@
             isInitializing = false;
             updateGains();
             visualize();
+            visualizeExtended(); // Inicia el nuevo analizador de espectro
             processDucking();
 
         } catch (error) {
@@ -355,7 +415,6 @@
         dAGain.gain.value = document.getElementById('v-da').value;
         dBGain.gain.value = document.getElementById('v-db').value;
         
-        // Control efectivo del volumen y el muteo para los 4 móviles
         movGain.gain.value = m1Muted ? 0 : document.getElementById('v-mov').value;
         mov2Gain.gain.value = m2Muted ? 0 : document.getElementById('v-mov2').value;
         mov3Gain.gain.value = m3Muted ? 0 : document.getElementById('v-mov3').value;
@@ -484,8 +543,14 @@
             recorders[type].ondataavailable = e => chunks[type].push(e.data);
             recorders[type].onstop = () => {
                 const blob = new Blob(chunks[type], {type: 'audio/webm'});
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-                a.download = `MAITINO_${type.toUpperCase()}_${Date.now()}.webm`; a.click();
+                const a = document.createElement('a'); 
+                a.href = URL.createObjectURL(blob);
+                
+                let customPrefix = document.getElementById('rec-filename').value.trim();
+                if(!customPrefix) customPrefix = "MAITINO";
+                a.download = `${customPrefix}_${type.toUpperCase()}_${Date.now()}.webm`; 
+                
+                a.click();
             };
             recorders[type].start(); b.classList.add('active');
             startTimes[type] = Date.now();
@@ -507,6 +572,148 @@
             for(let i=0; i<d.length; i+=12) ct.fillRect(i/4, cv.height, 3, -d[i]/4);
         };
         frame();
+    }
+
+    // --- NUEVAS FUNCIONALIDADES INFERIORES ---
+
+    function visualizeExtended() {
+        const vAnExt = audioCtx.createAnalyser();
+        vAnExt.fftSize = 512; // Mayor resolución para la onda
+        masterGain.connect(vAnExt);
+        
+        const cvExt = document.getElementById('cv-extended');
+        const ctExt = cvExt.getContext('2d');
+        
+        // Ajustar a la pantalla
+        cvExt.width = cvExt.offsetWidth * 2; 
+        cvExt.height = cvExt.offsetHeight * 2;
+        
+        const bufferLength = vAnExt.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        // Crear gradiente profesional (estilo espectrómetro de estudio)
+        const gradient = ctExt.createLinearGradient(0, cvExt.height, 0, 0);
+        gradient.addColorStop(0, '#00ffaa'); // Verde (Seguro)
+        gradient.addColorStop(0.6, '#00b3ff'); // Azul (Medios)
+        gradient.addColorStop(1, '#ff1a1a'); // Rojo (Picos)
+
+        const draw = () => {
+            requestAnimationFrame(draw);
+            vAnExt.getByteFrequencyData(dataArray);
+            
+            // Efecto de rastro suave
+            ctExt.fillStyle = 'rgba(3, 3, 5, 0.6)';
+            ctExt.fillRect(0, 0, cvExt.width, cvExt.height);
+            
+            const barWidth = (cvExt.width / bufferLength) * 1.5;
+            let x = 0;
+            
+            // Añadir un resplandor "glow" a las ondas
+            ctExt.shadowBlur = 10;
+            ctExt.shadowColor = 'rgba(0, 255, 170, 0.3)';
+            ctExt.fillStyle = gradient;
+            
+            for(let i = 0; i < bufferLength; i++) {
+                const barHeight = (dataArray[i] / 255) * cvExt.height;
+                
+                ctExt.beginPath();
+                // Usar bordes redondeados si el navegador lo soporta, para un look más moderno
+                if(ctExt.roundRect) {
+                    ctExt.roundRect(x, cvExt.height - barHeight, barWidth - 1, barHeight, [3, 3, 0, 0]);
+                } else {
+                    ctExt.rect(x, cvExt.height - barHeight, barWidth - 1, barHeight);
+                }
+                ctExt.fill();
+                
+                x += barWidth;
+            }
+        };
+        draw();
+    }
+
+    // --- LÓGICA MODO AUTO ---
+    function toggleAutoPlay() {
+        isAutoPlay = !isAutoPlay;
+        const btn = document.getElementById('btn-autoplay');
+        btn.classList.toggle('active', isAutoPlay);
+        btn.innerText = isAutoPlay ? "MODO AUTO: ON" : "MODO AUTO: OFF";
+        
+        if (isAutoPlay && playlistFilesArray.length > 0) {
+            const audA = document.getElementById('audA');
+            const audB = document.getElementById('audB');
+            if (audA.paused && audB.paused) {
+                playNextInAuto();
+            }
+        }
+    }
+
+    function playNextInAuto() {
+        if (!isAutoPlay || playlistFilesArray.length === 0) return;
+        
+        currentAutoIndex++;
+        if (currentAutoIndex >= playlistFilesArray.length) {
+            currentAutoIndex = 0; // Reiniciar playlist
+        }
+        
+        const file = playlistFilesArray[currentAutoIndex];
+        
+        init().then(() => {
+            const audA = document.getElementById('audA');
+            audA.src = URL.createObjectURL(file);
+            
+            // Forzar quitar el loop individual para que pueda saltar de canción automáticamente
+            audA.loop = false;
+            document.getElementById('lA').classList.remove('active');
+            
+            audA.play();
+            document.getElementById('pA').innerHTML = '<i class="fas fa-pause"></i>';
+        });
+    }
+
+    // Lógica para la Playlist Rápida
+    function handlePlaylistUpload(input) {
+        const files = Array.from(input.files);
+        // Añadir a nuestra matriz global para el Modo Automático
+        playlistFilesArray = playlistFilesArray.concat(files);
+        
+        const list = document.getElementById('pl-list');
+        const emptyMsg = document.getElementById('pl-empty');
+        
+        if(files.length > 0 && emptyMsg) {
+            emptyMsg.remove();
+        }
+
+        files.forEach(file => {
+            const li = document.createElement('li');
+            li.className = 'playlist-item';
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.innerText = file.name.length > 30 ? file.name.substring(0, 30) + '...' : file.name;
+            nameSpan.title = file.name;
+
+            const actions = document.createElement('div');
+            actions.className = 'pl-actions';
+
+            const btnA = document.createElement('button');
+            btnA.innerText = 'Cargar en A';
+            btnA.onclick = async () => {
+                await init();
+                document.getElementById('audA').src = URL.createObjectURL(file);
+            };
+
+            const btnB = document.createElement('button');
+            btnB.innerText = 'Cargar en B';
+            btnB.onclick = async () => {
+                await init();
+                document.getElementById('audB').src = URL.createObjectURL(file);
+            };
+
+            actions.appendChild(btnA);
+            actions.appendChild(btnB);
+            li.appendChild(nameSpan);
+            li.appendChild(actions);
+            list.appendChild(li);
+        });
     }
 </script>
 </body>
