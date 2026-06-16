@@ -9,11 +9,12 @@
         :root { --bg: #030305; --panel: #121216; --accent: #00ffaa; --danger: #ff1a1a; --border: rgba(255,255,255,0.1); --ducking: #e91e63; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .clock-display { font-family: monospace; font-size: 1.2rem; color: var(--accent); margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
-        .master-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; width: 100%; max-width: 1500px; }
-        /* Se amplían las columnas de 6 a 10 para albergar las nuevas unidades móviles */
-        .mixer { display: grid; grid-template-columns: repeat(10, 1fr); gap: 15px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid var(--border); }
+        .master-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; width: 100%; max-width: 1700px; }
+        /* Cambiado a 8 columnas para acomodar los nuevos móviles */
+        .mixer { display: grid; grid-template-columns: repeat(8, 1fr); gap: 15px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid var(--border); }
         .strip { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 15px; border: 1px solid var(--border); text-align: center; display: flex; flex-direction: column; }
         .fader { -webkit-appearance: slider-vertical; width: 30px; height: 200px; margin: 15px auto; cursor: pointer; }
+        .seek-bar { width: 100%; height: 5px; margin-top: 8px; cursor: pointer; accent-color: var(--accent); }
         .btn { background: #1c1c20; color: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn.active { background: var(--danger); border-color: var(--danger); }
         .btn-duck { background: #333; color: #888; margin-top: 10px; font-size: 0.7rem; border: 1px dashed #555; }
@@ -74,21 +75,6 @@
         </div>
 
         <div class="strip">
-            <h3>Móvil 5</h3>
-            <div id="m5-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov5" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov5" onclick="toggleMov(5)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio-5" autoplay hidden></audio>
-        </div>
-
-        <div class="strip">
-            <h3>Móvil 6</h3>
-            <div id="m6-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov6" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov6" onclick="toggleMov(6)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio-6" autoplay hidden></audio>
-        </div>
-        <div class="strip">
             <h3>Deck A</h3>
             <input type="range" id="v-da" class="fader" min="0" max="1" step="0.01" value="0.7" oninput="updateGains()">
             <button class="btn" onclick="document.getElementById('fA').click()"><i class="fas fa-upload"></i></button>
@@ -101,6 +87,7 @@
                 <span id="time-curr-A">00:00</span>
                 <span id="time-tot-A">00:00</span>
             </div>
+            <input type="range" class="seek-bar" id="seek-A" min="0" max="100" value="0" step="0.1" oninput="seekDeck('A')">
             <input type="file" id="fA" hidden onchange="loadD('A',this)"><audio id="audA" loop></audio>
         </div>
 
@@ -117,6 +104,7 @@
                 <span id="time-curr-B">00:00</span>
                 <span id="time-tot-B">00:00</span>
             </div>
+            <input type="range" class="seek-bar" id="seek-B" min="0" max="100" value="0" step="0.1" oninput="seekDeck('B')">
             <input type="file" id="fB" hidden onchange="loadD('B',this)"><audio id="audB" loop></audio>
         </div>
 
@@ -147,7 +135,7 @@
 </div>
 
 <script>
-    let audioCtx, masterGain, micGain, micComp, dAGain, dBGain, movGain, mov2Gain, mov3Gain, mov4Gain, mov5Gain, mov6Gain, musicBus, duckingGain;
+    let audioCtx, masterGain, micGain, micComp, dAGain, dBGain, movGain, mov2Gain, mov3Gain, mov4Gain, musicBus, duckingGain;
     let masterDest, micMovDest, liveGain, liveDest, analyzer;
     let peer, isInit = false, isInitializing = false, isDucking = false, isBroadcasting = false;
     let activeListenerCalls = {};
@@ -155,8 +143,8 @@
     let startTimes = { live: 0, master: 0, micmov: 0 };
     let intervals = { live: null, master: null, micmov: null };
     
-    let peerIds = { mov1: null, mov2: null, mov3: null, mov4: null, mov5: null, mov6: null }; 
-    let m1Muted = false, m2Muted = false, m3Muted = false, m4Muted = false, m5Muted = false, m6Muted = false;
+    let peerIds = { mov1: null, mov2: null, mov3: null, mov4: null }; 
+    let m1Muted = false, m2Muted = false, m3Muted = false, m4Muted = false;
 
     let activeDataConns = {};
 
@@ -191,12 +179,26 @@
             const aud = document.getElementById('aud' + id);
             const curr = document.getElementById('time-curr-' + id);
             const tot = document.getElementById('time-tot-' + id);
+            const seek = document.getElementById('seek-' + id);
 
-            aud.addEventListener('loadedmetadata', () => tot.innerText = formatMinSec(aud.duration));
-            aud.addEventListener('timeupdate', () => curr.innerText = formatMinSec(aud.currentTime));
+            aud.addEventListener('loadedmetadata', () => {
+                tot.innerText = formatMinSec(aud.duration);
+                seek.max = aud.duration;
+            });
+            aud.addEventListener('timeupdate', () => {
+                curr.innerText = formatMinSec(aud.currentTime);
+                seek.value = aud.currentTime;
+            });
         });
     }
     setupDeckTimers();
+
+    // Nueva función para saltar de un lado a otro en las pistas
+    function seekDeck(id) {
+        const aud = document.getElementById('aud' + id);
+        const seekVal = document.getElementById('seek-' + id).value;
+        aud.currentTime = seekVal;
+    }
 
     async function init() {
         if(isInit) return;
@@ -238,15 +240,17 @@
             audioCtx.createMediaElementSource(document.getElementById('audA')).connect(dAGain).connect(musicBus);
             audioCtx.createMediaElementSource(document.getElementById('audB')).connect(dBGain).connect(musicBus);
 
-            movGain = audioCtx.createGain(); mov2Gain = audioCtx.createGain();
-            mov3Gain = audioCtx.createGain(); mov4Gain = audioCtx.createGain();
-            mov5Gain = audioCtx.createGain(); mov6Gain = audioCtx.createGain();
+            // Nodos para los 4 móviles
+            movGain = audioCtx.createGain(); 
+            mov2Gain = audioCtx.createGain();
+            mov3Gain = audioCtx.createGain();
+            mov4Gain = audioCtx.createGain();
 
-            [movGain, mov2Gain, mov3Gain, mov4Gain, mov5Gain, mov6Gain].forEach(g => {
-                g.connect(masterGain);
-                g.connect(micMovDest);
-            });
-
+            movGain.connect(masterGain); movGain.connect(micMovDest);
+            mov2Gain.connect(masterGain); mov2Gain.connect(micMovDest);
+            mov3Gain.connect(masterGain); mov3Gain.connect(micMovDest);
+            mov4Gain.connect(masterGain); mov4Gain.connect(micMovDest);
+            
             micGain.connect(micMovDest); 
 
             liveGain = audioCtx.createGain(); liveGain.gain.value = 0;
@@ -276,12 +280,10 @@
                     }
                     if(data.type === 'mic_status') {
                         let statId = null;
-                        if(conn.peer === peerIds.mov1) statId = 'm-stat';
-                        else if(conn.peer === peerIds.mov2) statId = 'm2-stat';
-                        else if(conn.peer === peerIds.mov3) statId = 'm3-stat';
-                        else if(conn.peer === peerIds.mov4) statId = 'm4-stat';
-                        else if(conn.peer === peerIds.mov5) statId = 'm5-stat';
-                        else if(conn.peer === peerIds.mov6) statId = 'm6-stat';
+                        if (conn.peer === peerIds.mov1) statId = 'm-stat';
+                        else if (conn.peer === peerIds.mov2) statId = 'm2-stat';
+                        else if (conn.peer === peerIds.mov3) statId = 'm3-stat';
+                        else if (conn.peer === peerIds.mov4) statId = 'm4-stat';
 
                         if(statId) {
                             document.getElementById(statId).innerText = data.muted ? "● SILENCIADO EN MÓVIL" : "● ONLINE";
@@ -302,23 +304,19 @@
             peer.on('call', call => {
                 call.answer(masterDest.stream);
                 call.on('stream', s => {
-                    let targetId, statId, gainNode;
+                    let targetId = null;
+                    if (!document.getElementById('remote-audio').srcObject) targetId = 'remote-audio';
+                    else if (!document.getElementById('remote-audio-2').srcObject) targetId = 'remote-audio-2';
+                    else if (!document.getElementById('remote-audio-3').srcObject) targetId = 'remote-audio-3';
+                    else targetId = 'remote-audio-4';
 
-                    if(!document.getElementById('remote-audio').srcObject) {
-                        targetId = 'remote-audio'; statId = 'm-stat'; gainNode = movGain; peerIds.mov1 = call.peer;
-                    } else if(!document.getElementById('remote-audio-2').srcObject) {
-                        targetId = 'remote-audio-2'; statId = 'm2-stat'; gainNode = mov2Gain; peerIds.mov2 = call.peer;
-                    } else if(!document.getElementById('remote-audio-3').srcObject) {
-                        targetId = 'remote-audio-3'; statId = 'm3-stat'; gainNode = mov3Gain; peerIds.mov3 = call.peer;
-                    } else if(!document.getElementById('remote-audio-4').srcObject) {
-                        targetId = 'remote-audio-4'; statId = 'm4-stat'; gainNode = mov4Gain; peerIds.mov4 = call.peer;
-                    } else if(!document.getElementById('remote-audio-5').srcObject) {
-                        targetId = 'remote-audio-5'; statId = 'm5-stat'; gainNode = mov5Gain; peerIds.mov5 = call.peer;
-                    } else if(!document.getElementById('remote-audio-6').srcObject) {
-                        targetId = 'remote-audio-6'; statId = 'm6-stat'; gainNode = mov6Gain; peerIds.mov6 = call.peer;
-                    } else {
-                        return; // Límite máximo alcanzado
-                    }
+                    const statId = targetId === 'remote-audio' ? 'm-stat' : targetId === 'remote-audio-2' ? 'm2-stat' : targetId === 'remote-audio-3' ? 'm3-stat' : 'm4-stat';
+                    const gainNode = targetId === 'remote-audio' ? movGain : targetId === 'remote-audio-2' ? mov2Gain : targetId === 'remote-audio-3' ? mov3Gain : mov4Gain;
+
+                    if(targetId === 'remote-audio') peerIds.mov1 = call.peer;
+                    else if(targetId === 'remote-audio-2') peerIds.mov2 = call.peer;
+                    else if(targetId === 'remote-audio-3') peerIds.mov3 = call.peer;
+                    else peerIds.mov4 = call.peer;
 
                     document.getElementById(targetId).srcObject = s;
                     const source = audioCtx.createMediaStreamSource(s);
@@ -356,32 +354,14 @@
         micGain.gain.setTargetAtTime(document.getElementById('b-mic').classList.contains('active') ? document.getElementById('v-mic').value : 0, audioCtx.currentTime, 0.05);
         dAGain.gain.value = document.getElementById('v-da').value;
         dBGain.gain.value = document.getElementById('v-db').value;
+        
+        // Control efectivo del volumen y el muteo para los 4 móviles
         movGain.gain.value = m1Muted ? 0 : document.getElementById('v-mov').value;
         mov2Gain.gain.value = m2Muted ? 0 : document.getElementById('v-mov2').value;
         mov3Gain.gain.value = m3Muted ? 0 : document.getElementById('v-mov3').value;
         mov4Gain.gain.value = m4Muted ? 0 : document.getElementById('v-mov4').value;
-        mov5Gain.gain.value = m5Muted ? 0 : document.getElementById('v-mov5').value;
-        mov6Gain.gain.value = m6Muted ? 0 : document.getElementById('v-mov6').value;
+        
         masterGain.gain.value = document.getElementById('v-mas').value;
-    }
-
-    async function toggleMov(num) {
-        await init();
-        if(!isInit) return;
-        
-        let mutedState;
-        if(num === 1) { m1Muted = !m1Muted; mutedState = m1Muted; }
-        else if(num === 2) { m2Muted = !m2Muted; mutedState = m2Muted; }
-        else if(num === 3) { m3Muted = !m3Muted; mutedState = m3Muted; }
-        else if(num === 4) { m4Muted = !m4Muted; mutedState = m4Muted; }
-        else if(num === 5) { m5Muted = !m5Muted; mutedState = m5Muted; }
-        else if(num === 6) { m6Muted = !m6Muted; mutedState = m6Muted; }
-
-        let btnId = num === 1 ? 'b-mov1' : `b-mov${num}`;
-        document.getElementById(btnId).innerText = mutedState ? "CERRADO" : "ABIERTO";
-        document.getElementById(btnId).classList.toggle('active', mutedState);
-        
-        updateGains();
     }
 
     async function toggleMic() {
@@ -389,6 +369,29 @@
         if(!isInit) return;
         document.getElementById('b-mic').classList.toggle('active');
         document.getElementById('b-mic').innerText = document.getElementById('b-mic').classList.contains('active') ? "ABIERTO" : "CERRADO";
+        updateGains();
+    }
+
+    async function toggleMov(num) {
+        await init();
+        if(!isInit) return;
+        if(num === 1) {
+            m1Muted = !m1Muted;
+            document.getElementById('b-mov1').innerText = m1Muted ? "CERRADO" : "ABIERTO";
+            document.getElementById('b-mov1').classList.toggle('active', m1Muted);
+        } else if (num === 2) {
+            m2Muted = !m2Muted;
+            document.getElementById('b-mov2').innerText = m2Muted ? "CERRADO" : "ABIERTO";
+            document.getElementById('b-mov2').classList.toggle('active', m2Muted);
+        } else if (num === 3) {
+            m3Muted = !m3Muted;
+            document.getElementById('b-mov3').innerText = m3Muted ? "CERRADO" : "ABIERTO";
+            document.getElementById('b-mov3').classList.toggle('active', m3Muted);
+        } else if (num === 4) {
+            m4Muted = !m4Muted;
+            document.getElementById('b-mov4').innerText = m4Muted ? "CERRADO" : "ABIERTO";
+            document.getElementById('b-mov4').classList.toggle('active', m4Muted);
+        }
         updateGains();
     }
 
