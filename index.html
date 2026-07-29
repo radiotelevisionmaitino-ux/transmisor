@@ -8,7 +8,12 @@
     <style>
         :root { --bg: #030305; --panel: #121216; --accent: #00ffaa; --danger: #ff1a1a; --border: rgba(255,255,255,0.1); --ducking: #e91e63; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .clock-display { font-family: monospace; font-size: 1.2rem; color: var(--accent); margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
+        
+        /* --- ESTILO RELOJ RADIO ELEGANTE --- */
+        .header-container { text-align: center; margin-bottom: 25px; padding: 10px; }
+        .date-display { font-family: 'Inter', sans-serif; font-size: 1.1rem; color: #888; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 3px; font-weight: 300; }
+        .clock-display { font-family: 'Inter', sans-serif; font-size: 4.5rem; color: #fff; font-weight: 200; margin: 0; line-height: 1; display: flex; align-items: center; justify-content: center; }
+
         .master-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; width: 100%; max-width: 1700px; }
         
         .mixer { display: grid; grid-template-columns: repeat(8, 1fr); gap: 15px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid var(--border); }
@@ -28,15 +33,13 @@
         .t-row.live-active { color: #00e676; }
         .deck-timer-container { display: flex; justify-content: space-between; font-size: 0.85rem; font-family: monospace; color: var(--accent); margin-top: 10px; padding: 0 5px; font-weight: bold;}
 
-        /* --- NUEVOS ESTILOS PARA LOS PANELES INFERIORES --- */
+        /* --- PANELES INFERIORES --- */
         .bottom-panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 100%; max-width: 1700px; margin-top: 20px; }
         .sub-panel { background: var(--panel); padding: 20px; border-radius: 15px; border: 1px solid var(--border); display: flex; flex-direction: column; }
         .sub-panel h3 { margin-bottom: 15px; color: var(--accent); font-size: 0.85rem; }
         
-        /* Visualizador Extendido */
         #cv-extended { width: 100%; height: 120px; background: #000; border-radius: 8px; border: 1px solid var(--border); }
         
-        /* Playlist */
         .playlist-upload-btn { background: #2a2a30; border: 1px dashed var(--border); color: #888; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 0.8rem; flex: 1; }
         .playlist-upload-btn:hover { border-color: var(--accent); color: #fff; }
         .playlist-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 120px; border-radius: 5px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); }
@@ -45,7 +48,6 @@
         .pl-actions button { background: #333; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px; }
         .pl-actions button:hover { background: var(--accent); color: black; }
         
-        /* Notas y Archivo */
         .config-input { width: calc(100% - 20px); background: #000; border: 1px solid var(--border); color: #00ffaa; padding: 10px; border-radius: 5px; font-family: monospace; margin-bottom: 10px; }
         .notes-area { flex: 1; width: calc(100% - 20px); background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 5px; resize: none; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
         .notes-area:focus, .config-input:focus { outline: 1px solid var(--accent); }
@@ -53,13 +55,18 @@
 </head>
 <body>
 
-<div class="clock-display" id="main-clock">CARGANDO SISTEMA...</div>
+<div class="header-container">
+    <div id="main-date" class="date-display">CARGANDO FECHA...</div>
+    <div class="clock-display">
+        <span id="main-time">00:00:00</span>
+    </div>
+</div>
 
 <div class="master-grid">
     <div class="mixer">
         <div class="strip">
             <h3>Mic 1</h3>
-            <input type="range" id="v-mic" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
+            <input type="range" id="v-mic" class="fader" min="0" max="3" step="0.01" value="1.5" oninput="updateGains()">
             <button class="btn" id="b-mic" onclick="toggleMic()">CERRADO</button>
             <button class="btn btn-duck" id="b-duck" onclick="toggleDucking()">AUTO-DUCKING OFF</button>
         </div>
@@ -96,11 +103,18 @@
             <audio id="remote-audio-4" autoplay hidden></audio>
         </div>
 
-        <div class="strip">
+        <!-- DECK A (Dual: Archivo + Web URL) -->
+        <div class="strip" style="border-color: #00b3ff;">
             <h3>Deck A</h3>
-            <input type="range" id="v-da" class="fader" min="0" max="1" step="0.01" value="0.7" oninput="updateGains()">
-            <button class="btn" onclick="document.getElementById('fA').click()"><i class="fas fa-upload"></i></button>
-            <div style="display: flex; gap: 5px; margin-top: 5px;">
+            <input type="range" id="v-da" class="fader" min="0" max="1" step="0.01" value="0.6" oninput="updateGains()">
+            
+            <button class="btn" onclick="document.getElementById('fA').click()" style="margin-bottom: 5px; width: 100%; font-size: 0.75rem;"><i class="fas fa-folder-open"></i> Local</button>
+            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                <input type="text" id="url-A" class="config-input" placeholder="Pega URL Enlace" style="font-size: 0.6rem; padding: 6px; margin: 0; flex: 1;">
+                <button class="btn" onclick="loadUrl('A')" style="padding: 6px 10px;" title="Cargar URL Web"><i class="fas fa-link"></i></button>
+            </div>
+
+            <div style="display: flex; gap: 5px;">
                 <button class="btn" id="pA" onclick="playDeck('A')" style="flex: 1;" title="Play/Pausa"><i class="fas fa-play"></i></button>
                 <button class="btn" onclick="restartDeck('A')" style="flex: 1;" title="Reiniciar al inicio"><i class="fas fa-backward-step"></i></button>
                 <button class="btn active" id="lA" onclick="toggleLoop('A')" style="flex: 1;" title="Bucle ON/OFF"><i class="fas fa-repeat"></i></button>
@@ -110,14 +124,21 @@
                 <span id="time-tot-A">00:00</span>
             </div>
             <input type="range" class="seek-bar" id="seek-A" min="0" max="100" value="0" step="0.1" oninput="seekDeck('A')">
-            <input type="file" id="fA" hidden onchange="loadD('A',this)"><audio id="audA" loop></audio>
+            <input type="file" id="fA" hidden onchange="loadD('A',this)"><audio id="audA" crossorigin="anonymous" loop></audio>
         </div>
 
-        <div class="strip">
+        <!-- DECK B (Dual: Archivo + Web URL) -->
+        <div class="strip" style="border-color: #00b3ff;">
             <h3>Deck B</h3>
-            <input type="range" id="v-db" class="fader" min="0" max="1" step="0.01" value="0.7" oninput="updateGains()">
-            <button class="btn" onclick="document.getElementById('fB').click()"><i class="fas fa-upload"></i></button>
-            <div style="display: flex; gap: 5px; margin-top: 5px;">
+            <input type="range" id="v-db" class="fader" min="0" max="1" step="0.01" value="0.6" oninput="updateGains()">
+            
+            <button class="btn" onclick="document.getElementById('fB').click()" style="margin-bottom: 5px; width: 100%; font-size: 0.75rem;"><i class="fas fa-folder-open"></i> Local</button>
+            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                <input type="text" id="url-B" class="config-input" placeholder="Pega URL Enlace" style="font-size: 0.6rem; padding: 6px; margin: 0; flex: 1;">
+                <button class="btn" onclick="loadUrl('B')" style="padding: 6px 10px;" title="Cargar URL Web"><i class="fas fa-link"></i></button>
+            </div>
+
+            <div style="display: flex; gap: 5px;">
                 <button class="btn" id="pB" onclick="playDeck('B')" style="flex: 1;" title="Play/Pausa"><i class="fas fa-play"></i></button>
                 <button class="btn" onclick="restartDeck('B')" style="flex: 1;" title="Reiniciar al inicio"><i class="fas fa-backward-step"></i></button>
                 <button class="btn active" id="lB" onclick="toggleLoop('B')" style="flex: 1;" title="Bucle ON/OFF"><i class="fas fa-repeat"></i></button>
@@ -127,7 +148,7 @@
                 <span id="time-tot-B">00:00</span>
             </div>
             <input type="range" class="seek-bar" id="seek-B" min="0" max="100" value="0" step="0.1" oninput="seekDeck('B')">
-            <input type="file" id="fB" hidden onchange="loadD('B',this)"><audio id="audB" loop></audio>
+            <input type="file" id="fB" hidden onchange="loadD('B',this)"><audio id="audB" crossorigin="anonymous" loop></audio>
         </div>
 
         <div class="strip" style="border-color: var(--accent);">
@@ -143,6 +164,7 @@
             <h3>📡 Transmisión</h3>
             <button class="btn btn-live" id="b-live" onclick="toggleLive()">CONECTAR ANTENA</button>
             <hr style="width:100%; border:0; border-top:1px solid #333;">
+            
             <h3>🔴 Grabación</h3>
             <button class="btn" onclick="rec('master')" id="r-mas">REC MASTER</button>
             <button class="btn" onclick="rec('micmov')" id="r-micmov" style="margin-top:5px;">REC VOCES (MIC+MOV)</button>
@@ -152,6 +174,10 @@
                 <div id="t-master" class="t-row">🔴 MASTER: OFF</div>
                 <div id="t-micmov" class="t-row">🔴 VOCES: OFF</div>
             </div>
+
+            <hr style="width:100%; border:0; border-top:1px solid #333; margin-top: 15px;">
+            <h3>🔔 UTILIDADES LOCALES</h3>
+            <button class="btn btn-duck active" id="b-pips" onclick="togglePips()" style="margin-top:5px; width:100%;">SEÑALES HORARIAS: ON</button>
         </div>
     </div>
 </div>
@@ -197,24 +223,86 @@
 
     let activeDataConns = {};
 
-    // --- VARIABLES PLAYLIST AUTO ---
     let isAutoPlay = false;
     let playlistFilesArray = [];
     let currentAutoIndex = -1;
+
+    // Control del modo Deck (archivo local vs url stream)
+    let deckModes = { A: 'file', B: 'file' };
+    
+    // Control de Señales Horarias (Pips)
+    let pipsEnabled = true;
+    let lastPipSecond = -1;
+    let lastTimeString = "";
+
+    function togglePips() {
+        pipsEnabled = !pipsEnabled;
+        const b = document.getElementById('b-pips');
+        b.innerText = pipsEnabled ? "SEÑALES HORARIAS: ON" : "SEÑALES HORARIAS: OFF";
+        b.classList.toggle('active', pipsEnabled);
+    }
+
+    // El pitido se envía ÚNICAMENTE a la salida local (audioCtx.destination), nunca al Master ni WebRTC
+    function playPip(type) {
+        if (!audioCtx || !pipsEnabled) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 1000;
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination); 
+        
+        const now = audioCtx.currentTime;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.5, now + 0.01);
+        
+        const duration = type === 'long' ? 0.6 : 0.15;
+        gain.gain.setValueAtTime(0.5, now + duration - 0.01);
+        gain.gain.linearRampToValueAtTime(0, now + duration);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    }
+
+    function checkPips(now) {
+        if (!pipsEnabled || !audioCtx) return;
+        const m = now.getMinutes();
+        const s = now.getSeconds();
+        
+        if (lastPipSecond === s) return; // Evitar disparos dobles en el mismo segundo
+        
+        // Y media (3 cortos + 1 largo) -> Se disparan en los seg 57, 58, 59 y 00
+        if (m === 29 && (s === 57 || s === 58 || s === 59)) { playPip('short'); lastPipSecond = s; }
+        if (m === 30 && s === 0) { playPip('long'); lastPipSecond = s; }
+        
+        // En punto (4 cortos + 1 largo) -> Se disparan en los seg 56, 57, 58, 59 y 00
+        if (m === 59 && (s === 56 || s === 57 || s === 58 || s === 59)) { playPip('short'); lastPipSecond = s; }
+        if (m === 0 && s === 0) { playPip('long'); lastPipSecond = s; }
+    }
 
     function updateMainClock() {
         const now = new Date();
         const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
         const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
         
-        const fechaLineal = `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
         const horaLineal = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
         
-        document.getElementById('main-clock').innerText = `${fechaLineal} ${horaLineal}`.toUpperCase();
+        // Actualizar UI solo si cambió el texto (optimización)
+        if (horaLineal !== lastTimeString) {
+            const fechaLineal = `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+            document.getElementById('main-date').innerText = fechaLineal.toUpperCase();
+            document.getElementById('main-time').innerText = horaLineal;
+            lastTimeString = horaLineal;
+        }
+        
+        // Evaluar si corresponde señal horaria
+        checkPips(now);
     }
     
+    // Intervalo bajado a 200ms para asegurar la exactitud de los pitidos al segundo
+    setInterval(updateMainClock, 200);
     updateMainClock();
-    setInterval(updateMainClock, 1000);
 
     function formatTime(ms) {
         let sec = Math.floor(ms / 1000);
@@ -228,6 +316,23 @@
         return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
+    // Configuración visual del Deck dependiendo si es Archivo o URL Stream
+    function setDeckVisualMode(id, mode) {
+        deckModes[id] = mode;
+        const seekBar = document.getElementById('seek-' + id);
+        const tot = document.getElementById('time-tot-' + id);
+        if (mode === 'url') {
+            seekBar.disabled = true;
+            seekBar.style.opacity = '0.3';
+            seekBar.style.cursor = 'default';
+            tot.innerText = "EN DIRECTO";
+        } else {
+            seekBar.disabled = false;
+            seekBar.style.opacity = '1';
+            seekBar.style.cursor = 'pointer';
+        }
+    }
+
     function setupDeckTimers() {
         ['A', 'B'].forEach(id => {
             const aud = document.getElementById('aud' + id);
@@ -236,17 +341,20 @@
             const seek = document.getElementById('seek-' + id);
 
             aud.addEventListener('loadedmetadata', () => {
-                tot.innerText = formatMinSec(aud.duration);
-                seek.max = aud.duration;
+                if(deckModes[id] === 'file') {
+                    tot.innerText = formatMinSec(aud.duration);
+                    seek.max = aud.duration;
+                }
             });
             aud.addEventListener('timeupdate', () => {
                 curr.innerText = formatMinSec(aud.currentTime);
-                seek.value = aud.currentTime;
+                if (deckModes[id] === 'file' && isFinite(aud.duration)) {
+                    seek.value = aud.currentTime;
+                }
             });
 
-            // --- EVENTO PARA EL MODO AUTO ---
             aud.addEventListener('ended', () => {
-                if (isAutoPlay) {
+                if (isAutoPlay && deckModes[id] === 'file') {
                     playNextInAuto();
                 }
             });
@@ -255,6 +363,7 @@
     setupDeckTimers();
 
     function seekDeck(id) {
+        if(deckModes[id] === 'url') return; // Bloquear salto de tiempo si es emisión online
         const aud = document.getElementById('aud' + id);
         const seekVal = document.getElementById('seek-' + id).value;
         aud.currentTime = seekVal;
@@ -287,8 +396,10 @@
             
             micGain = audioCtx.createGain(); micGain.gain.value = 0;
             micComp = audioCtx.createDynamicsCompressor();
-            micComp.threshold.value = -15; micComp.knee.value = 15; micComp.ratio.value = 2.5; 
-            micComp.attack.value = 0.01; micComp.release.value = 0.15;
+            
+            /* Ajustes para mayor contundencia y fuerza en la voz del locutor */
+            micComp.threshold.value = -18; micComp.knee.value = 10; micComp.ratio.value = 3.5; 
+            micComp.attack.value = 0.005; micComp.release.value = 0.1;
 
             mSrc.connect(micComp).connect(micGain).connect(masterGain);
 
@@ -299,6 +410,13 @@
             dAGain = audioCtx.createGain(); dBGain = audioCtx.createGain();
             audioCtx.createMediaElementSource(document.getElementById('audA')).connect(dAGain).connect(musicBus);
             audioCtx.createMediaElementSource(document.getElementById('audB')).connect(dBGain).connect(musicBus);
+
+            // HACK KEEPAWAKE PROFESIONAL
+            const keepAwake = audioCtx.createOscillator();
+            const silentGain = audioCtx.createGain();
+            silentGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            keepAwake.connect(silentGain).connect(audioCtx.destination);
+            keepAwake.start();
 
             movGain = audioCtx.createGain(); 
             mov2Gain = audioCtx.createGain();
@@ -392,7 +510,7 @@
             isInitializing = false;
             updateGains();
             visualize();
-            visualizeExtended(); // Inicia el nuevo analizador de espectro
+            visualizeExtended();
             processDucking();
 
         } catch (error) {
@@ -467,7 +585,7 @@
             if(isDucking && document.getElementById('b-mic').classList.contains('active')) {
                 analyzer.getByteFrequencyData(data);
                 let avg = data.reduce((a,b) => a+b)/data.length;
-                let target = avg > 20 ? 0.4 : 1.0;
+                let target = avg > 20 ? 0.25 : 1.0;
                 duckingGain.gain.setTargetAtTime(target, audioCtx.currentTime, 0.15);
             } else {
                 duckingGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.2);
@@ -480,18 +598,48 @@
     async function loadD(id, input) { 
         await init(); 
         if(!isInit) return;
+        setDeckVisualMode(id, 'file');
         document.getElementById('aud'+id).src = URL.createObjectURL(input.files[0]); 
+    }
+
+    async function loadUrl(id) {
+        await init();
+        if(!isInit) return;
+        const urlInput = document.getElementById('url-' + id).value.trim();
+        if(!urlInput) {
+            alert("Por favor, introduce una URL válida para el Deck " + id);
+            return;
+        }
+        setDeckVisualMode(id, 'url');
+        const aud = document.getElementById('aud' + id);
+        aud.src = urlInput;
+        aud.load();
     }
     
     function playDeck(id) {
         const p = document.getElementById('aud'+id);
         const b = document.getElementById('p'+id);
-        if(p.paused) { p.play(); b.innerHTML = '<i class="fas fa-pause"></i>'; }
-        else { p.pause(); b.innerHTML = '<i class="fas fa-play"></i>'; }
+        if(p.paused) { 
+            p.play().then(() => {
+                b.innerHTML = '<i class="fas fa-pause"></i>';
+                b.style.color = "#00ffaa"; 
+            }).catch(err => {
+                console.error(err);
+                alert("⚠️ Error: Si es una URL Web, comprueba que está activa y admite CORS.");
+            });
+        }
+        else { 
+            p.pause(); 
+            b.innerHTML = '<i class="fas fa-play"></i>';
+            b.style.color = "#fff"; 
+        }
     }
 
     function restartDeck(id) {
-        document.getElementById('aud'+id).currentTime = 0;
+        // Solo aplica si es archivo físico, en directo no tiene sentido reiniciar
+        if(deckModes[id] === 'file') {
+            document.getElementById('aud'+id).currentTime = 0;
+        }
     }
 
     function toggleLoop(id) {
@@ -574,41 +722,35 @@
         frame();
     }
 
-    // --- NUEVAS FUNCIONALIDADES INFERIORES ---
-
     function visualizeExtended() {
         const vAnExt = audioCtx.createAnalyser();
-        vAnExt.fftSize = 512; // Mayor resolución para la onda
+        vAnExt.fftSize = 512;
         masterGain.connect(vAnExt);
         
         const cvExt = document.getElementById('cv-extended');
         const ctExt = cvExt.getContext('2d');
         
-        // Ajustar a la pantalla
         cvExt.width = cvExt.offsetWidth * 2; 
         cvExt.height = cvExt.offsetHeight * 2;
         
         const bufferLength = vAnExt.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
 
-        // Crear gradiente profesional (estilo espectrómetro de estudio)
         const gradient = ctExt.createLinearGradient(0, cvExt.height, 0, 0);
-        gradient.addColorStop(0, '#00ffaa'); // Verde (Seguro)
-        gradient.addColorStop(0.6, '#00b3ff'); // Azul (Medios)
-        gradient.addColorStop(1, '#ff1a1a'); // Rojo (Picos)
+        gradient.addColorStop(0, '#00ffaa'); 
+        gradient.addColorStop(0.6, '#00b3ff'); 
+        gradient.addColorStop(1, '#ff1a1a'); 
 
         const draw = () => {
             requestAnimationFrame(draw);
             vAnExt.getByteFrequencyData(dataArray);
             
-            // Efecto de rastro suave
             ctExt.fillStyle = 'rgba(3, 3, 5, 0.6)';
             ctExt.fillRect(0, 0, cvExt.width, cvExt.height);
             
             const barWidth = (cvExt.width / bufferLength) * 1.5;
             let x = 0;
             
-            // Añadir un resplandor "glow" a las ondas
             ctExt.shadowBlur = 10;
             ctExt.shadowColor = 'rgba(0, 255, 170, 0.3)';
             ctExt.fillStyle = gradient;
@@ -617,7 +759,6 @@
                 const barHeight = (dataArray[i] / 255) * cvExt.height;
                 
                 ctExt.beginPath();
-                // Usar bordes redondeados si el navegador lo soporta, para un look más moderno
                 if(ctExt.roundRect) {
                     ctExt.roundRect(x, cvExt.height - barHeight, barWidth - 1, barHeight, [3, 3, 0, 0]);
                 } else {
@@ -631,7 +772,6 @@
         draw();
     }
 
-    // --- LÓGICA MODO AUTO ---
     function toggleAutoPlay() {
         isAutoPlay = !isAutoPlay;
         const btn = document.getElementById('btn-autoplay');
@@ -652,16 +792,16 @@
         
         currentAutoIndex++;
         if (currentAutoIndex >= playlistFilesArray.length) {
-            currentAutoIndex = 0; // Reiniciar playlist
+            currentAutoIndex = 0; 
         }
         
         const file = playlistFilesArray[currentAutoIndex];
         
         init().then(() => {
             const audA = document.getElementById('audA');
+            setDeckVisualMode('A', 'file');
             audA.src = URL.createObjectURL(file);
             
-            // Forzar quitar el loop individual para que pueda saltar de canción automáticamente
             audA.loop = false;
             document.getElementById('lA').classList.remove('active');
             
@@ -670,10 +810,8 @@
         });
     }
 
-    // Lógica para la Playlist Rápida
     function handlePlaylistUpload(input) {
         const files = Array.from(input.files);
-        // Añadir a nuestra matriz global para el Modo Automático
         playlistFilesArray = playlistFilesArray.concat(files);
         
         const list = document.getElementById('pl-list');
@@ -698,6 +836,7 @@
             btnA.innerText = 'Cargar en A';
             btnA.onclick = async () => {
                 await init();
+                setDeckVisualMode('A', 'file');
                 document.getElementById('audA').src = URL.createObjectURL(file);
             };
 
@@ -705,6 +844,7 @@
             btnB.innerText = 'Cargar en B';
             btnB.onclick = async () => {
                 await init();
+                setDeckVisualMode('B', 'file');
                 document.getElementById('audB').src = URL.createObjectURL(file);
             };
 
