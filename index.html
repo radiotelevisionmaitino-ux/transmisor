@@ -103,7 +103,7 @@
             <audio id="remote-audio-4" autoplay hidden></audio>
         </div>
 
-        <!-- DECK A (Dual: Archivo + Web URL) -->
+        <!-- DECK A -->
         <div class="strip" style="border-color: #00b3ff;">
             <h3>Deck A</h3>
             <input type="range" id="v-da" class="fader" min="0" max="1" step="0.01" value="0.6" oninput="updateGains()">
@@ -124,10 +124,11 @@
                 <span id="time-tot-A">00:00</span>
             </div>
             <input type="range" class="seek-bar" id="seek-A" min="0" max="100" value="0" step="0.1" oninput="seekDeck('A')">
-            <input type="file" id="fA" hidden onchange="loadD('A',this)"><audio id="audA" crossorigin="anonymous" loop></audio>
+            <input type="file" id="fA" hidden onchange="loadD('A',this)">
+            <audio id="audA" crossorigin="anonymous" loop></audio>
         </div>
 
-        <!-- DECK B (Dual: Archivo + Web URL) -->
+        <!-- DECK B -->
         <div class="strip" style="border-color: #00b3ff;">
             <h3>Deck B</h3>
             <input type="range" id="v-db" class="fader" min="0" max="1" step="0.01" value="0.6" oninput="updateGains()">
@@ -148,7 +149,8 @@
                 <span id="time-tot-B">00:00</span>
             </div>
             <input type="range" class="seek-bar" id="seek-B" min="0" max="100" value="0" step="0.1" oninput="seekDeck('B')">
-            <input type="file" id="fB" hidden onchange="loadD('B',this)"><audio id="audB" crossorigin="anonymous" loop></audio>
+            <input type="file" id="fB" hidden onchange="loadD('B',this)">
+            <audio id="audB" crossorigin="anonymous" loop></audio>
         </div>
 
         <div class="strip" style="border-color: var(--accent);">
@@ -227,10 +229,8 @@
     let playlistFilesArray = [];
     let currentAutoIndex = -1;
 
-    // Control del modo Deck (archivo local vs url stream)
     let deckModes = { A: 'file', B: 'file' };
     
-    // Control de Señales Horarias (Pips)
     let pipsEnabled = true;
     let lastPipSecond = -1;
     let lastTimeString = "";
@@ -242,9 +242,8 @@
         b.classList.toggle('active', pipsEnabled);
     }
 
-    // El pitido se envía ÚNICAMENTE a la salida local (audioCtx.destination), nunca al Master ni WebRTC
     function playPip(type) {
-        if (!audioCtx || !pipsEnabled) return;
+        if (!audioCtx || !pipsEnabled || audioCtx.state === 'suspended') return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
@@ -270,13 +269,11 @@
         const m = now.getMinutes();
         const s = now.getSeconds();
         
-        if (lastPipSecond === s) return; // Evitar disparos dobles en el mismo segundo
+        if (lastPipSecond === s) return; 
         
-        // Y media (3 cortos + 1 largo) -> Se disparan en los seg 57, 58, 59 y 00
         if (m === 29 && (s === 57 || s === 58 || s === 59)) { playPip('short'); lastPipSecond = s; }
         if (m === 30 && s === 0) { playPip('long'); lastPipSecond = s; }
         
-        // En punto (4 cortos + 1 largo) -> Se disparan en los seg 56, 57, 58, 59 y 00
         if (m === 59 && (s === 56 || s === 57 || s === 58 || s === 59)) { playPip('short'); lastPipSecond = s; }
         if (m === 0 && s === 0) { playPip('long'); lastPipSecond = s; }
     }
@@ -288,7 +285,6 @@
         
         const horaLineal = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
         
-        // Actualizar UI solo si cambió el texto (optimización)
         if (horaLineal !== lastTimeString) {
             const fechaLineal = `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
             document.getElementById('main-date').innerText = fechaLineal.toUpperCase();
@@ -296,11 +292,9 @@
             lastTimeString = horaLineal;
         }
         
-        // Evaluar si corresponde señal horaria
         checkPips(now);
     }
     
-    // Intervalo bajado a 200ms para asegurar la exactitud de los pitidos al segundo
     setInterval(updateMainClock, 200);
     updateMainClock();
 
@@ -316,7 +310,6 @@
         return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
-    // Configuración visual del Deck dependiendo si es Archivo o URL Stream
     function setDeckVisualMode(id, mode) {
         deckModes[id] = mode;
         const seekBar = document.getElementById('seek-' + id);
@@ -363,13 +356,20 @@
     setupDeckTimers();
 
     function seekDeck(id) {
-        if(deckModes[id] === 'url') return; // Bloquear salto de tiempo si es emisión online
+        if(deckModes[id] === 'url') return; 
         const aud = document.getElementById('aud' + id);
         const seekVal = document.getElementById('seek-' + id).value;
         aud.currentTime = seekVal;
     }
 
+    async function ensureAudioContext() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
+    }
+
     async function init() {
+        if(audioCtx) await ensureAudioContext();
         if(isInit) return;
         if(isInitializing) return; 
         isInitializing = true;
@@ -382,8 +382,13 @@
             musicBus.connect(duckingGain);
 
             masterGain = audioCtx.createGain();
+            // POTENCIA DE EMISIÓN: Limiter "Brickwall" profesional para maximizar el sonido
             const limiter = audioCtx.createDynamicsCompressor();
-            limiter.threshold.value = -1.0; limiter.knee.value = 0; limiter.ratio.value = 20;
+            limiter.threshold.value = -2.0; 
+            limiter.knee.value = 0; 
+            limiter.ratio.value = 20; 
+            limiter.attack.value = 0.002; 
+            limiter.release.value = 0.05;
             
             duckingGain.connect(masterGain);
             masterGain.connect(limiter);
@@ -397,9 +402,12 @@
             micGain = audioCtx.createGain(); micGain.gain.value = 0;
             micComp = audioCtx.createDynamicsCompressor();
             
-            /* Ajustes para mayor contundencia y fuerza en la voz del locutor */
-            micComp.threshold.value = -18; micComp.knee.value = 10; micComp.ratio.value = 3.5; 
-            micComp.attack.value = 0.005; micComp.release.value = 0.1;
+            /* Ajustes MUY fuertes y claros para la voz */
+            micComp.threshold.value = -22; 
+            micComp.knee.value = 5; 
+            micComp.ratio.value = 4.5; 
+            micComp.attack.value = 0.005; 
+            micComp.release.value = 0.1;
 
             mSrc.connect(micComp).connect(micGain).connect(masterGain);
 
@@ -411,7 +419,7 @@
             audioCtx.createMediaElementSource(document.getElementById('audA')).connect(dAGain).connect(musicBus);
             audioCtx.createMediaElementSource(document.getElementById('audB')).connect(dBGain).connect(musicBus);
 
-            // HACK KEEPAWAKE PROFESIONAL
+            // HACK KEEPAWAKE PROFESIONAL (Evita que Chrome duerma la pestaña)
             const keepAwake = audioCtx.createOscillator();
             const silentGain = audioCtx.createGain();
             silentGain.gain.setValueAtTime(0, audioCtx.currentTime);
@@ -437,11 +445,16 @@
             analyzer = audioCtx.createAnalyser();
             micComp.connect(analyzer);
 
+            // RESILIENCIA RED: Múltiples servidores STUN para asegurar conectividad en cualquier red (misma IP, NATs, etc)
             peer = new Peer('maitino-studio-host', {
                 config: {
                     'iceServers': [
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
                     ]
                 }
             });
@@ -504,7 +517,16 @@
                 });
             });
 
-            peer.on('disconnected', () => peer.reconnect());
+            peer.on('disconnected', () => {
+                if (!peer.destroyed) peer.reconnect();
+            });
+
+            peer.on('error', (err) => {
+                console.error("PeerJS Error:", err);
+                if (err.type === 'network' || err.type === 'disconnected' || err.type === 'server-error') {
+                     setTimeout(() => { if (!peer.destroyed) peer.reconnect(); }, 3000);
+                }
+            });
 
             isInit = true;
             isInitializing = false;
@@ -521,6 +543,7 @@
     }
 
     function iniciarLlamadaOyente(peerId) {
+        if(!isInit || !liveDest) return;
         let call = peer.call(peerId, liveDest.stream);
         activeListenerCalls[peerId] = call;
         call.on('close', () => { delete activeListenerCalls[peerId]; });
@@ -616,13 +639,14 @@
         aud.load();
     }
     
-    function playDeck(id) {
+    async function playDeck(id) {
+        await ensureAudioContext();
         const p = document.getElementById('aud'+id);
         const b = document.getElementById('p'+id);
         if(p.paused) { 
             p.play().then(() => {
                 b.innerHTML = '<i class="fas fa-pause"></i>';
-                b.style.color = "#00ffaa"; 
+                b.style.color = "#00ffaa";
             }).catch(err => {
                 console.error(err);
                 alert("⚠️ Error: Si es una URL Web, comprueba que está activa y admite CORS.");
@@ -636,7 +660,6 @@
     }
 
     function restartDeck(id) {
-        // Solo aplica si es archivo físico, en directo no tiene sentido reiniciar
         if(deckModes[id] === 'file') {
             document.getElementById('aud'+id).currentTime = 0;
         }
@@ -656,7 +679,7 @@
         const b = document.getElementById('b-live');
         if(!isBroadcasting) {
             isBroadcasting = true;
-            liveGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 2);
+            liveGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 1);
             b.innerText = "● EN EL AIRE"; b.style.background = "red";
             startTimes.live = Date.now();
             intervals.live = setInterval(() => document.getElementById('t-live').innerText = `📡 EN AIRE: ${formatTime(Date.now() - startTimes.live)}`, 1000);
@@ -668,12 +691,12 @@
             }
         } else {
             isBroadcasting = false;
-            liveGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+            liveGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
             
             Object.values(activeListenerCalls).forEach(call => call.close());
             activeListenerCalls = {};
             
-            setTimeout(() => { b.innerText = "CONECTAR ANTENA"; b.style.background = "#00e676"; }, 2000);
+            setTimeout(() => { b.innerText = "CONECTAR ANTENA"; b.style.background = "#00e676"; }, 1000);
             clearInterval(intervals.live);
             document.getElementById('t-live').innerText = "📡 EN AIRE: OFF";
         }
@@ -696,7 +719,7 @@
                 
                 let customPrefix = document.getElementById('rec-filename').value.trim();
                 if(!customPrefix) customPrefix = "MAITINO";
-                a.download = `${customPrefix}_${type.toUpperCase()}_${Date.now()}.webm`; 
+                a.download = `${customPrefix}_${type.toUpperCase()}_${Date.now()}.webm`;
                 
                 a.click();
             };
