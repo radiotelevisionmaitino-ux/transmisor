@@ -1,24 +1,32 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>MAITINO STUDIO | MASTER ULTRA PRO HD</title>
+    <title>MAITINO STUDIO | MASTER ULTRA PRO HD V2</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #030305; --panel: #121216; --accent: #00ffaa; --danger: #ff1a1a; --border: rgba(255,255,255,0.1); --ducking: #e91e63; }
-        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; width: 100%; box-sizing: border-box;}
         
-        /* --- ESTILO RELOJ RADIO ELEGANTE --- */
-        .header-container { text-align: center; margin-bottom: 25px; padding: 10px; }
-        .date-display { font-family: 'Inter', sans-serif; font-size: 1.1rem; color: #888; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 3px; font-weight: 300; }
-        .clock-display { font-family: 'Inter', sans-serif; font-size: 4.5rem; color: #fff; font-weight: 200; margin: 0; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        /* --- ESTILO RELOJES Y CRONÓMETROS --- */
+        .header-container { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1800px; margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 15px; border: 1px solid var(--border); }
+        .clock-section { display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .date-display { font-family: 'Inter', sans-serif; font-size: 1rem; color: #888; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 3px; font-weight: 300; }
+        .clock-display { font-family: 'Inter', sans-serif; font-size: 4rem; color: #fff; font-weight: 200; margin: 0; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .utc-badge { font-size: 1.2rem; color: var(--accent); margin-left: 10px; font-weight: 600; }
+        .sw-controls { display: flex; gap: 10px; margin-top: 10px; }
+        .sw-btn { background: #1c1c20; border: 1px solid var(--border); color: #00ffaa; padding: 5px 15px; border-radius: 5px; cursor: pointer; transition: 0.2s; }
+        .sw-btn:hover { background: #333; }
 
-        .master-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; width: 100%; max-width: 1700px; }
+        /* --- MESA PRINCIPAL --- */
+        .master-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; width: 100%; max-width: 1800px; }
         
-        .mixer { display: grid; grid-template-columns: repeat(8, 1fr); gap: 15px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid var(--border); }
-        .strip { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 15px; border: 1px solid var(--border); text-align: center; display: flex; flex-direction: column; }
-        .fader { -webkit-appearance: slider-vertical; width: 30px; height: 200px; margin: 15px auto; cursor: pointer; }
+        .mixer { display: grid; grid-template-columns: repeat(9, 1fr); gap: 12px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid var(--border); }
+        .strip { background: rgba(0,0,0,0.4); padding: 15px 10px; border-radius: 15px; border: 1px solid var(--border); text-align: center; display: flex; flex-direction: column; }
+        
+        .fader { -webkit-appearance: slider-vertical; width: 30px; height: 180px; margin: 15px auto; cursor: pointer; }
         .seek-bar { width: 100%; height: 5px; margin-top: 8px; cursor: pointer; accent-color: var(--accent); }
         .btn { background: #1c1c20; color: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn.active { background: var(--danger); border-color: var(--danger); }
@@ -27,154 +35,204 @@
         .btn-live { background: #00e676; color: #000; height: 60px; font-size: 1.1rem; width: 100%; margin-top: 10px; }
         canvas { width: 100%; height: 50px; background: #000; border-radius: 5px; }
         h3 { font-size: 0.7rem; text-transform: uppercase; color: #888; margin: 0; }
-        .timers { font-family: monospace; font-size: 0.9rem; text-align: left; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .t-row { margin: 5px 0; color: #888; }
+        
+        .timers { font-family: monospace; font-size: 1.1rem; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-top: 10px; letter-spacing: 1px;}
+        .t-row { margin: 8px 0; color: #888; font-weight: bold; }
         .t-row.active { color: var(--danger); }
         .t-row.live-active { color: #00e676; }
         .deck-timer-container { display: flex; justify-content: space-between; font-size: 0.85rem; font-family: monospace; color: var(--accent); margin-top: 10px; padding: 0 5px; font-weight: bold;}
 
-        /* --- PANELES INFERIORES --- */
-        .bottom-panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 100%; max-width: 1700px; margin-top: 20px; }
-        .sub-panel { background: var(--panel); padding: 20px; border-radius: 15px; border: 1px solid var(--border); display: flex; flex-direction: column; }
-        .sub-panel h3 { margin-bottom: 15px; color: var(--accent); font-size: 0.85rem; }
+        /* --- PANELES INFERIORES COMPACTOS Y SUPERPUESTOS --- */
+        .bottom-container { 
+            display: grid; 
+            grid-template-columns: 350px 1fr; /* Espectro a la izquierda, controles a la derecha */
+            gap: 20px; 
+            width: 100%; 
+            max-width: 1800px; 
+            margin-top: 20px; 
+            align-items: start;
+        }
         
-        #cv-extended { width: 100%; height: 120px; background: #000; border-radius: 8px; border: 1px solid var(--border); }
+        /* Espectro Compacto al lado */
+        .spectrum-panel { background: var(--panel); padding: 20px; border-radius: 15px; border: 1px solid var(--border); width: 100%; box-sizing: border-box; }
+        #cv-extended { width: 100%; height: 250px; background: #000; border-radius: 8px; border: 1px solid #333; }
+        
+        /* Fila de Script + Matrix + Playlist a la derecha */
+        .bottom-panels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
+        .sub-panel { background: var(--panel); padding: 20px; border-radius: 15px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sub-panel h3 { margin-bottom: 15px; color: var(--accent); font-size: 0.85rem; border-bottom: 1px solid #333; padding-bottom: 8px; }
         
         .playlist-upload-btn { background: #2a2a30; border: 1px dashed var(--border); color: #888; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 0.8rem; flex: 1; }
         .playlist-upload-btn:hover { border-color: var(--accent); color: #fff; }
-        .playlist-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 120px; border-radius: 5px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); }
+        .playlist-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 250px; border-radius: 5px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); }
         .playlist-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #222; font-size: 0.75rem; color: #ccc; }
-        .playlist-item:last-child { border-bottom: none; }
         .pl-actions button { background: #333; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px; }
         .pl-actions button:hover { background: var(--accent); color: black; }
         
         .config-input { width: calc(100% - 20px); background: #000; border: 1px solid var(--border); color: #00ffaa; padding: 10px; border-radius: 5px; font-family: monospace; margin-bottom: 10px; }
-        .notes-area { flex: 1; width: calc(100% - 20px); background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 5px; resize: none; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
-        .notes-area:focus, .config-input:focus { outline: 1px solid var(--accent); }
+        .notes-area { flex: 1; width: calc(100% - 20px); min-height: 250px; background: #050508; border: 1px solid var(--border); color: #fff; padding: 15px; border-radius: 5px; resize: vertical; font-family: 'Inter', sans-serif; font-size: 0.95rem; line-height: 1.5; }
+        
+        /* --- MATRIZ DE PROCESAMIENTO VERTICAL --- */
+        .matrix-container { display: flex; flex-direction: column; gap: 12px; }
+        .matrix-row { display: flex; flex-direction: column; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid #222; }
+        .matrix-row label { font-size: 0.7rem; color: #aaa; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        .matrix-row select, .matrix-row input[type="range"] { width: 100%; background: #111; color: #fff; border: 1px solid #333; padding: 5px; border-radius: 4px; font-family: monospace; }
+        .matrix-slider-group { display: flex; align-items: center; gap: 10px; }
+        .matrix-val { font-size: 0.7rem; color: var(--accent); width: 35px; text-align: right; }
     </style>
 </head>
 <body>
 
 <div class="header-container">
-    <div id="main-date" class="date-display">CARGANDO FECHA...</div>
-    <div class="clock-display">
-        <span id="main-time">00:00:00</span>
+    <!-- HORA UTC (IZQUIERDA) -->
+    <div class="clock-section" style="align-items: flex-start; padding-left: 20px;">
+        <div class="date-display">TIEMPO UNIVERSAL</div>
+        <div class="clock-display">
+            <span id="utc-time">00:00</span>
+            <span class="utc-badge">UTC</span>
+        </div>
+    </div>
+    
+    <!-- HORA LOCAL ESPAÑA (CENTRO) -->
+    <div class="clock-section">
+        <div id="main-date-elche" class="date-display">CARGANDO FECHA...</div>
+        <div class="clock-display" id="elche-time">00:00:00</div>
+    </div>
+
+    <!-- CRONÓMETRO (DERECHA) -->
+    <div class="clock-section" style="align-items: flex-end; padding-right: 20px;">
+        <div class="date-display">TEMPORIZADOR</div>
+        <div class="clock-display" style="font-size: 3rem;" id="stopwatch">00:00:00.00</div>
+        <div class="sw-controls">
+            <button class="sw-btn" onclick="startSw()"><i class="fas fa-play"></i></button>
+            <button class="sw-btn" onclick="pauseSw()"><i class="fas fa-pause"></i></button>
+            <button class="sw-btn" onclick="resetSw()"><i class="fas fa-stop"></i></button>
+        </div>
     </div>
 </div>
 
 <div class="master-grid">
-    <div class="mixer">
-        <div class="strip">
-            <h3>Mic 1</h3>
-            <input type="range" id="v-mic" class="fader" min="0" max="3" step="0.01" value="1.5" oninput="updateGains()">
-            <button class="btn" id="b-mic" onclick="toggleMic()">CERRADO</button>
-            <button class="btn btn-duck" id="b-duck" onclick="toggleDucking()">AUTO-DUCKING OFF</button>
-        </div>
-
-        <div class="strip">
-            <h3>Móvil 1</h3>
-            <div id="m-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov1" onclick="toggleMov(1)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio" autoplay hidden></audio>
-        </div>
-
-        <div class="strip">
-            <h3>Móvil 2</h3>
-            <div id="m2-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov2" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov2" onclick="toggleMov(2)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio-2" autoplay hidden></audio>
-        </div>
-
-        <div class="strip">
-            <h3>Móvil 3</h3>
-            <div id="m3-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov3" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov3" onclick="toggleMov(3)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio-3" autoplay hidden></audio>
-        </div>
-
-        <div class="strip">
-            <h3>Móvil 4</h3>
-            <div id="m4-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov4" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov4" onclick="toggleMov(4)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio-4" autoplay hidden></audio>
-        </div>
-
-        <!-- DECK A -->
-        <div class="strip" style="border-color: #00b3ff;">
-            <h3>Deck A</h3>
-            <input type="range" id="v-da" class="fader" min="0" max="1" step="0.01" value="0.6" oninput="updateGains()">
-            
-            <button class="btn" onclick="document.getElementById('fA').click()" style="margin-bottom: 5px; width: 100%; font-size: 0.75rem;"><i class="fas fa-folder-open"></i> Local</button>
-            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                <input type="text" id="url-A" class="config-input" placeholder="Pega URL Enlace" style="font-size: 0.6rem; padding: 6px; margin: 0; flex: 1;">
-                <button class="btn" onclick="loadUrl('A')" style="padding: 6px 10px;" title="Cargar URL Web"><i class="fas fa-link"></i></button>
+    <div style="display: flex; flex-direction: column;">
+        <!-- MESA PRINCIPAL -->
+        <div class="mixer">
+            <!-- MIC 1 -->
+            <div class="strip">
+                <h3>Mic 1</h3>
+                <input type="range" id="v-mic1" class="fader" min="0" max="3" step="0.01" value="1.5" oninput="updateGains()">
+                <button class="btn" id="b-mic1" onclick="toggleMic(1)">CERRADO</button>
+                <select id="sel-mic1" style="width:100%; font-size:10px; margin-top:5px; background:#111; color:#fff; border:1px solid #333;"></select>
+                <button class="btn btn-duck" id="b-duck1" onclick="toggleDucking()">DUCKING OFF</button>
             </div>
 
-            <div style="display: flex; gap: 5px;">
-                <button class="btn" id="pA" onclick="playDeck('A')" style="flex: 1;" title="Play/Pausa"><i class="fas fa-play"></i></button>
-                <button class="btn" onclick="restartDeck('A')" style="flex: 1;" title="Reiniciar al inicio"><i class="fas fa-backward-step"></i></button>
-                <button class="btn active" id="lA" onclick="toggleLoop('A')" style="flex: 1;" title="Bucle ON/OFF"><i class="fas fa-repeat"></i></button>
-            </div>
-            <div class="deck-timer-container">
-                <span id="time-curr-A">00:00</span>
-                <span id="time-tot-A">00:00</span>
-            </div>
-            <input type="range" class="seek-bar" id="seek-A" min="0" max="100" value="0" step="0.1" oninput="seekDeck('A')">
-            <input type="file" id="fA" hidden onchange="loadD('A',this)">
-            <audio id="audA" crossorigin="anonymous" loop></audio>
-        </div>
-
-        <!-- DECK B -->
-        <div class="strip" style="border-color: #00b3ff;">
-            <h3>Deck B</h3>
-            <input type="range" id="v-db" class="fader" min="0" max="1" step="0.01" value="0.6" oninput="updateGains()">
-            
-            <button class="btn" onclick="document.getElementById('fB').click()" style="margin-bottom: 5px; width: 100%; font-size: 0.75rem;"><i class="fas fa-folder-open"></i> Local</button>
-            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                <input type="text" id="url-B" class="config-input" placeholder="Pega URL Enlace" style="font-size: 0.6rem; padding: 6px; margin: 0; flex: 1;">
-                <button class="btn" onclick="loadUrl('B')" style="padding: 6px 10px;" title="Cargar URL Web"><i class="fas fa-link"></i></button>
+            <!-- MIC 2 -->
+            <div class="strip">
+                <h3>Mic 2</h3>
+                <input type="range" id="v-mic2" class="fader" min="0" max="3" step="0.01" value="1.5" oninput="updateGains()">
+                <button class="btn" id="b-mic2" onclick="toggleMic(2)">CERRADO</button>
+                <select id="sel-mic2" style="width:100%; font-size:10px; margin-top:5px; background:#111; color:#fff; border:1px solid #333;"></select>
+                <div style="font-size: 0.6rem; color: #555; margin-top: 10px;">INVITADO</div>
             </div>
 
-            <div style="display: flex; gap: 5px;">
-                <button class="btn" id="pB" onclick="playDeck('B')" style="flex: 1;" title="Play/Pausa"><i class="fas fa-play"></i></button>
-                <button class="btn" onclick="restartDeck('B')" style="flex: 1;" title="Reiniciar al inicio"><i class="fas fa-backward-step"></i></button>
-                <button class="btn active" id="lB" onclick="toggleLoop('B')" style="flex: 1;" title="Bucle ON/OFF"><i class="fas fa-repeat"></i></button>
+            <!-- MOVIL 1 -->
+            <div class="strip">
+                <h3>Móvil 1</h3>
+                <div id="m1-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
+                <input type="range" id="v-mov1" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
+                <button class="btn" id="b-mov1" onclick="toggleMov(1)" style="margin-top: 5px;">ABIERTO</button>
+                <audio id="remote-audio-1" autoplay hidden></audio>
             </div>
-            <div class="deck-timer-container">
-                <span id="time-curr-B">00:00</span>
-                <span id="time-tot-B">00:00</span>
-            </div>
-            <input type="range" class="seek-bar" id="seek-B" min="0" max="100" value="0" step="0.1" oninput="seekDeck('B')">
-            <input type="file" id="fB" hidden onchange="loadD('B',this)">
-            <audio id="audB" crossorigin="anonymous" loop></audio>
-        </div>
 
-        <div class="strip" style="border-color: var(--accent);">
-            <h3>Master Out</h3>
-            <canvas id="cv-master"></canvas>
-            <input type="range" id="v-mas" class="fader" min="0" max="1" step="0.01" value="0.9" oninput="updateGains()">
-            <div style="font-size:0.6rem;">LIMITER ACTIVE</div>
+            <!-- MOVIL 2 -->
+            <div class="strip">
+                <h3>Móvil 2</h3>
+                <div id="m2-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
+                <input type="range" id="v-mov2" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
+                <button class="btn" id="b-mov2" onclick="toggleMov(2)" style="margin-top: 5px;">ABIERTO</button>
+                <audio id="remote-audio-2" autoplay hidden></audio>
+            </div>
+
+            <!-- MOVIL 3 -->
+            <div class="strip">
+                <h3>Móvil 3</h3>
+                <div id="m3-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
+                <input type="range" id="v-mov3" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
+                <button class="btn" id="b-mov3" onclick="toggleMov(3)" style="margin-top: 5px;">ABIERTO</button>
+                <audio id="remote-audio-3" autoplay hidden></audio>
+            </div>
+
+            <!-- MOVIL 4 -->
+            <div class="strip">
+                <h3>Móvil 4</h3>
+                <div id="m4-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
+                <input type="range" id="v-mov4" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
+                <button class="btn" id="b-mov4" onclick="toggleMov(4)" style="margin-top: 5px;">ABIERTO</button>
+                <audio id="remote-audio-4" autoplay hidden></audio>
+            </div>
+
+            <!-- DECK A -->
+            <div class="strip" style="border-color: #00b3ff;">
+                <h3>Deck A</h3>
+                <input type="range" id="v-da" class="fader" min="0" max="1" step="0.01" value="0.6" oninput="updateGains()">
+                <button class="btn" onclick="document.getElementById('fA').click()" style="margin-bottom: 5px; width: 100%; font-size: 0.75rem;"><i class="fas fa-folder-open"></i></button>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="text" id="url-A" class="config-input" placeholder="URL" style="font-size: 0.6rem; padding: 6px; margin: 0; flex: 1;">
+                    <button class="btn" onclick="loadUrl('A')" style="padding: 6px 10px;"><i class="fas fa-link"></i></button>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn" id="pA" onclick="playDeck('A')" style="flex: 1;"><i class="fas fa-play"></i></button>
+                    <button class="btn active" id="lA" onclick="toggleLoop('A')" style="flex: 1;"><i class="fas fa-repeat"></i></button>
+                </div>
+                <div class="deck-timer-container"><span id="time-curr-A">00:00</span><span id="time-tot-A">00:00</span></div>
+                <input type="range" class="seek-bar" id="seek-A" min="0" max="100" value="0" step="0.1" oninput="seekDeck('A')">
+                <input type="file" id="fA" hidden onchange="loadD('A',this)">
+                <audio id="audA" crossorigin="anonymous" loop></audio>
+            </div>
+
+            <!-- DECK B -->
+            <div class="strip" style="border-color: #00b3ff;">
+                <h3>Deck B</h3>
+                <input type="range" id="v-db" class="fader" min="0" max="1" step="0.01" value="0.6" oninput="updateGains()">
+                <button class="btn" onclick="document.getElementById('fB').click()" style="margin-bottom: 5px; width: 100%; font-size: 0.75rem;"><i class="fas fa-folder-open"></i></button>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="text" id="url-B" class="config-input" placeholder="URL" style="font-size: 0.6rem; padding: 6px; margin: 0; flex: 1;">
+                    <button class="btn" onclick="loadUrl('B')" style="padding: 6px 10px;"><i class="fas fa-link"></i></button>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn" id="pB" onclick="playDeck('B')" style="flex: 1;"><i class="fas fa-play"></i></button>
+                    <button class="btn active" id="lB" onclick="toggleLoop('B')" style="flex: 1;"><i class="fas fa-repeat"></i></button>
+                </div>
+                <div class="deck-timer-container"><span id="time-curr-B">00:00</span><span id="time-tot-B">00:00</span></div>
+                <input type="range" class="seek-bar" id="seek-B" min="0" max="100" value="0" step="0.1" oninput="seekDeck('B')">
+                <input type="file" id="fB" hidden onchange="loadD('B',this)">
+                <audio id="audB" crossorigin="anonymous" loop></audio>
+            </div>
+
+            <!-- MASTER -->
+            <div class="strip" style="border-color: var(--accent);">
+                <h3>Master Out</h3>
+                <canvas id="cv-master"></canvas>
+                <input type="range" id="v-mas" class="fader" min="0" max="1" step="0.01" value="0.9" oninput="updateGains()">
+                <div style="font-size:0.6rem; margin-top:5px; color:var(--accent);">PROCESS MATRIX ACTIVE</div>
+            </div>
         </div>
     </div>
 
+    <!-- LATERAL: CONTROLES DE EMISIÓN -->
     <div class="sidebar">
         <div class="mixer" style="grid-template-columns: 1fr; gap: 10px;">
-            <h3>📡 Transmisión</h3>
+            <h3>📡 Transmisión (Doble Redundancia)</h3>
             <button class="btn btn-live" id="b-live" onclick="toggleLive()">CONECTAR ANTENA</button>
             <hr style="width:100%; border:0; border-top:1px solid #333;">
             
-            <h3>🔴 Grabación</h3>
-            <button class="btn" onclick="rec('master')" id="r-mas">REC MASTER</button>
-            <button class="btn" onclick="rec('micmov')" id="r-micmov" style="margin-top:5px;">REC VOCES (MIC+MOV)</button>
+            <h3>🔴 Grabación Multicanal</h3>
+            <button class="btn" onclick="rec('master')" id="r-mas">REC MASTER (Aire)</button>
+            <button class="btn" onclick="rec('micmov')" id="r-micmov" style="margin-top:5px;">REC VOCES LÍMPIDAS</button>
             
+            <!-- TIMERS EMISIÓN -->
             <div class="timers">
-                <div id="t-live" class="t-row">📡 EN AIRE: OFF</div>
-                <div id="t-master" class="t-row">🔴 MASTER: OFF</div>
-                <div id="t-micmov" class="t-row">🔴 VOCES: OFF</div>
+                <div id="t-live" class="t-row">📡 ANT: 00:00</div>
+                <div id="t-master" class="t-row">🔴 MAS: 00:00</div>
+                <div id="t-micmov" class="t-row">🔴 VOC: 00:00</div>
             </div>
 
             <hr style="width:100%; border:0; border-top:1px solid #333; margin-top: 15px;">
@@ -184,56 +242,210 @@
     </div>
 </div>
 
-<div class="bottom-panels">
-    <div class="sub-panel">
-        <h3><i class="fas fa-wave-square"></i> Analizador de Espectro MASTER</h3>
+<div class="bottom-container">
+    <!-- ESPECTRO A LA IZQUIERDA -->
+    <div class="spectrum-panel">
+        <h3><i class="fas fa-wave-square"></i> Espectro Master Ultra HD</h3>
         <canvas id="cv-extended"></canvas>
     </div>
 
-    <div class="sub-panel">
-        <h3><i class="fas fa-list-ol"></i> Playlist Rápida</h3>
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <div class="playlist-upload-btn" onclick="document.getElementById('pl-upload').click()">
-                <i class="fas fa-plus"></i> Añadir pistas
+    <!-- PANELES DE CONTROL A LA DERECHA -->
+    <div class="bottom-panels">
+        <!-- 1. PLAYLIST RAPIDA -->
+        <div class="sub-panel">
+            <h3><i class="fas fa-list-ol"></i> Playlist Rápida</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <div class="playlist-upload-btn" onclick="document.getElementById('pl-upload').click()">
+                    <i class="fas fa-plus"></i> Añadir pistas
+                </div>
+                <button class="btn btn-duck" id="btn-autoplay" onclick="toggleAutoPlay()" style="margin-top: 0; flex: 1;">MODO AUTO: OFF</button>
             </div>
-            <button class="btn btn-duck" id="btn-autoplay" onclick="toggleAutoPlay()" style="margin-top: 0; flex: 1;">MODO AUTO: OFF</button>
+            <input type="file" id="pl-upload" hidden multiple accept="audio/*" onchange="handlePlaylistUpload(this)">
+            <ul class="playlist-list" id="pl-list">
+                <li style="padding:10px; color:#555; text-align:center; font-style:italic;" id="pl-empty">Lista vacía</li>
+            </ul>
         </div>
-        <input type="file" id="pl-upload" hidden multiple accept="audio/*" onchange="handlePlaylistUpload(this)">
-        <ul class="playlist-list" id="pl-list">
-            <li style="padding:10px; color:#555; text-align:center; font-style:italic;" id="pl-empty">Lista vacía</li>
-        </ul>
-    </div>
 
-    <div class="sub-panel">
-        <h3><i class="fas fa-edit"></i> Guion & Nombre de Grabación</h3>
-        <input type="text" id="rec-filename" class="config-input" placeholder="Ej: MI_PROGRAMA_T01E05 (Nombre base)" title="Prefijo para los archivos grabados">
-        <textarea class="notes-area" placeholder="Escribe aquí tu escaleta, menciones publicitarias, recordatorios, o notas del programa..."></textarea>
+        <!-- 2. MATRIZ DE PROCESAMIENTO (CALIDAD EMISIÓN) -->
+        <div class="sub-panel">
+            <h3><i class="fas fa-sliders-h"></i> Calidad de Emisión (Matriz)</h3>
+            <div class="matrix-container">
+                <div class="matrix-row">
+                    <label>Modo de Salida</label>
+                    <select id="mx-out" onchange="updateMatrix()">
+                        <option value="stereo">Estéreo Real (2.0)</option>
+                        <option value="monosum">Mono Sumado (L+R -> L/R)</option>
+                        <option value="dualmono">Dual Mono Split (L/R Aislado)</option>
+                        <option value="mono">Mono Real (1 Canal)</option>
+                        <option value="monol">Mono Izquierdo (Solo L)</option>
+                        <option value="monor">Mono Derecho (Solo R)</option>
+                        <option value="inv">Fase Invertida (Stereo invertido)</option>
+                    </select>
+                </div>
+                <div class="matrix-row">
+                    <label>Ancho de Banda / Filtro</label>
+                    <select id="mx-bw" onchange="updateMatrix()">
+                        <option value="super">Super Ultra HD (Bypass/Sin Límite)</option>
+                        <option value="uhd">Ultra HD (Corte 20kHz)</option>
+                        <option value="fm-hq">Calidad FM HQ (Corte 18kHz)</option>
+                        <option value="fm">Calidad FM (Corte 15kHz)</option>
+                        <option value="am-hq">Calidad Onda Media AM HQ (Corte 10kHz)</option>
+                        <option value="am">Calidad Onda Media AM (Corte 9kHz)</option>
+                        <option value="lw">Calidad Onda Larga LW (Corte 4.5kHz)</option>
+                        <option value="tel">Telefónico (300Hz - 3.4kHz)</option>
+                        <option value="sub">Sub-Telefónico (Walkie 500-1kHz)</option>
+                    </select>
+                </div>
+                <div class="matrix-row">
+                    <label>Ecualizador (Graves - Agudos)</label>
+                    <div class="matrix-slider-group">
+                        <span style="font-size:0.6rem; color:#888;">LOW</span>
+                        <input type="range" id="mx-bass" min="-15" max="15" step="1" value="0" oninput="updateMatrix()">
+                        <span id="mx-bass-val" class="matrix-val">0dB</span>
+                    </div>
+                    <div class="matrix-slider-group" style="margin-top: 5px;">
+                        <span style="font-size:0.6rem; color:#888;">HIGH</span>
+                        <input type="range" id="mx-treble" min="-15" max="15" step="1" value="0" oninput="updateMatrix()">
+                        <span id="mx-treble-val" class="matrix-val">0dB</span>
+                    </div>
+                </div>
+                <div class="matrix-row">
+                    <label>Dinámica (Compresión)</label>
+                    <div class="matrix-slider-group">
+                        <span style="font-size:0.6rem; color:#888;">UMB</span>
+                        <input type="range" id="mx-thresh" min="-50" max="0" step="1" value="-10" oninput="updateMatrix()">
+                        <span id="mx-thresh-val" class="matrix-val">-10dB</span>
+                    </div>
+                    <div class="matrix-slider-group" style="margin-top: 5px;">
+                        <span style="font-size:0.6rem; color:#888;">RATIO</span>
+                        <input type="range" id="mx-ratio" min="1" max="20" step="0.5" value="3" oninput="updateMatrix()">
+                        <span id="mx-ratio-val" class="matrix-val">3:1</span>
+                    </div>
+                </div>
+                <div class="matrix-row">
+                    <label>Bitrate WebRTC (Salida Red)</label>
+                    <select id="mx-bitrate" onchange="console.log('Bitrate configurado a: ' + this.value)">
+                        <option value="512">512 kbps (Máxima Calidad)</option>
+                        <option value="320">320 kbps (Calidad Estudio)</option>
+                        <option value="256" selected>256 kbps (Estándar HD)</option>
+                        <option value="192">192 kbps (Estándar Radio Pro)</option>
+                        <option value="128">128 kbps (Ahorro Datos)</option>
+                        <option value="96">96 kbps (Prioridad Voz)</option>
+                        <option value="64">64 kbps (Conexión Pobre)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. GUION Y NOTAS -->
+        <div class="sub-panel">
+            <h3><i class="fas fa-edit"></i> Guion de Programa</h3>
+            <input type="text" id="rec-filename" class="config-input" placeholder="Nombre base grabación: EJ_PROGRAMA_01" style="font-size: 0.9rem;">
+            <textarea class="notes-area" placeholder="Escribe aquí tu escaleta del programa, menciones publicitarias, tiempos de pausas, o notas importantes..."></textarea>
+        </div>
     </div>
 </div>
 
 <script>
-    let audioCtx, masterGain, micGain, micComp, dAGain, dBGain, movGain, mov2Gain, mov3Gain, mov4Gain, musicBus, duckingGain;
-    let masterDest, micMovDest, liveGain, liveDest, analyzer;
+    // Variables de audio
+    let audioCtx, masterGain, musicBus, duckingGain, liveGain, liveDest, analyzer;
+    let mic1Gain, mic2Gain, mic1Comp, mic2Comp;
+    let movGains = [];
+    let dAGain, dBGain;
+    let masterDest, micMovDest;
+    
+    // Nodos de la Matriz de Procesamiento
+    let eqBassNode, eqTrebleNode, dynCompNode, bwFilterNode, outMerger, outSplitter;
+
+    // Conectividad
     let peer, isInit = false, isInitializing = false, isDucking = false, isBroadcasting = false;
     let activeListenerCalls = {};
+    let activeDataConns = {};
+    let peerIds = [null, null, null, null, null];
+    let mMuted = [false, false, false, false, false];
+
+    // Grabación / Timers Emisión
     let recorders = {}, chunks = {master:[], micmov:[]};
     let startTimes = { live: 0, master: 0, micmov: 0 };
     let intervals = { live: null, master: null, micmov: null };
-    
-    let peerIds = { mov1: null, mov2: null, mov3: null, mov4: null }; 
-    let m1Muted = false, m2Muted = false, m3Muted = false, m4Muted = false;
 
-    let activeDataConns = {};
+    // Cronómetro Izquierdo
+    let swInterval = null, swStartTime = 0, swElapsedTime = 0;
 
     let isAutoPlay = false;
     let playlistFilesArray = [];
     let currentAutoIndex = -1;
-
     let deckModes = { A: 'file', B: 'file' };
     
     let pipsEnabled = true;
-    let lastPipSecond = -1;
-    let lastTimeString = "";
+    let lastPipMinute = -1;
+
+    // Obtener Dispositivos de Audio al cargar
+    async function loadAudioDevices() {
+        try {
+            await navigator.mediaDevices.getUserMedia({audio:true});
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const audios = devices.filter(d => d.kind === 'audioinput');
+            const sel1 = document.getElementById('sel-mic1');
+            const sel2 = document.getElementById('sel-mic2');
+            sel1.innerHTML = ''; sel2.innerHTML = '';
+            audios.forEach(d => {
+                sel1.add(new Option(d.label || 'Micrófono 1', d.deviceId));
+                sel2.add(new Option(d.label || 'Micrófono 2', d.deviceId));
+            });
+        } catch(e) {
+            console.warn("Permisos de micrófono necesarios para listar dispositivos.");
+        }
+    }
+    window.onload = loadAudioDevices;
+
+    // --- CRONÓMETRO MANUAL (HH:MM:SS.xx) ---
+    function formatSwMs(ms) {
+        let hrs = Math.floor(ms / 3600000);
+        let min = Math.floor((ms % 3600000) / 60000);
+        let sec = Math.floor((ms % 60000) / 1000);
+        let milli = Math.floor((ms % 1000) / 10); // Exactamente 2 dígitos (00-99)
+        return `${String(hrs).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(milli).padStart(2, '0')}`;
+    }
+    
+    function startSw() {
+        if(!swInterval) {
+            swStartTime = Date.now() - swElapsedTime;
+            swInterval = setInterval(() => {
+                swElapsedTime = Date.now() - swStartTime;
+                document.getElementById('stopwatch').innerText = formatSwMs(swElapsedTime);
+            }, 30);
+        }
+    }
+    function pauseSw() { clearInterval(swInterval); swInterval = null; }
+    function resetSw() { pauseSw(); swElapsedTime = 0; document.getElementById('stopwatch').innerText = "00:00:00.00"; }
+
+    // --- RELOJES PRINCIPALES (ESPAÑA Y UTC) ---
+    function updateClocks() {
+        const now = new Date();
+        const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        
+        document.getElementById('main-date-elche').innerText = `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]}`.toUpperCase();
+        
+        const optsElche = { timeZone: 'Europe/Madrid', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        document.getElementById('elche-time').innerText = new Intl.DateTimeFormat('es-ES', optsElche).format(now);
+        
+        const hUTC = String(now.getUTCHours()).padStart(2, '0');
+        const mUTC = String(now.getUTCMinutes()).padStart(2, '0');
+        document.getElementById('utc-time').innerText = `${hUTC}:${mUTC}`;
+        
+        checkPips(now);
+    }
+    setInterval(updateClocks, 1000);
+    updateClocks();
+
+    function formatTimeNoMs(ms) {
+        if(ms < 0) ms = 0;
+        let min = Math.floor(ms / 60000);
+        let sec = Math.floor((ms % 60000) / 1000);
+        return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
 
     function togglePips() {
         pipsEnabled = !pipsEnabled;
@@ -246,11 +458,8 @@
         if (!audioCtx || !pipsEnabled || audioCtx.state === 'suspended') return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = 'sine';
         osc.frequency.value = 1000;
-        
-        osc.connect(gain);
-        gain.connect(audioCtx.destination); 
+        osc.connect(gain); gain.connect(audioCtx.destination); 
         
         const now = audioCtx.currentTime;
         gain.gain.setValueAtTime(0, now);
@@ -259,54 +468,22 @@
         const duration = type === 'long' ? 0.6 : 0.15;
         gain.gain.setValueAtTime(0.5, now + duration - 0.01);
         gain.gain.linearRampToValueAtTime(0, now + duration);
-        
-        osc.start(now);
-        osc.stop(now + duration);
+        osc.start(now); osc.stop(now + duration);
     }
 
     function checkPips(now) {
         if (!pipsEnabled || !audioCtx) return;
-        const m = now.getMinutes();
         const s = now.getSeconds();
+        const m = now.getMinutes();
+        if (lastPipMinute === m && s < 56) return;
         
-        if (lastPipSecond === s) return; 
-        
-        if (m === 29 && (s === 57 || s === 58 || s === 59)) { playPip('short'); lastPipSecond = s; }
-        if (m === 30 && s === 0) { playPip('long'); lastPipSecond = s; }
-        
-        if (m === 59 && (s === 56 || s === 57 || s === 58 || s === 59)) { playPip('short'); lastPipSecond = s; }
-        if (m === 0 && s === 0) { playPip('long'); lastPipSecond = s; }
-    }
-
-    function updateMainClock() {
-        const now = new Date();
-        const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-        
-        const horaLineal = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-        
-        if (horaLineal !== lastTimeString) {
-            const fechaLineal = `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
-            document.getElementById('main-date').innerText = fechaLineal.toUpperCase();
-            document.getElementById('main-time').innerText = horaLineal;
-            lastTimeString = horaLineal;
-        }
-        
-        checkPips(now);
-    }
-    
-    setInterval(updateMainClock, 200);
-    updateMainClock();
-
-    function formatTime(ms) {
-        let sec = Math.floor(ms / 1000);
-        return `${String(Math.floor(sec / 3600)).padStart(2, '0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+        if ((m === 29 || m === 59) && (s === 57 || s === 58 || s === 59)) playPip('short');
+        if ((m === 30 || m === 0) && s === 0 && lastPipMinute !== m) { playPip('long'); lastPipMinute = m; }
     }
 
     function formatMinSec(seconds) {
         if (isNaN(seconds) || !isFinite(seconds)) return "00:00";
-        let m = Math.floor(seconds / 60);
-        let s = Math.floor(seconds % 60);
+        let m = Math.floor(seconds / 60); let s = Math.floor(seconds % 60);
         return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
@@ -314,146 +491,119 @@
         deckModes[id] = mode;
         const seekBar = document.getElementById('seek-' + id);
         const tot = document.getElementById('time-tot-' + id);
-        if (mode === 'url') {
-            seekBar.disabled = true;
-            seekBar.style.opacity = '0.3';
-            seekBar.style.cursor = 'default';
-            tot.innerText = "EN DIRECTO";
-        } else {
-            seekBar.disabled = false;
-            seekBar.style.opacity = '1';
-            seekBar.style.cursor = 'pointer';
-        }
+        seekBar.disabled = (mode === 'url');
+        seekBar.style.opacity = (mode === 'url') ? '0.3' : '1';
+        if(mode === 'url') tot.innerText = "EN DIRECTO";
     }
 
     function setupDeckTimers() {
         ['A', 'B'].forEach(id => {
             const aud = document.getElementById('aud' + id);
-            const curr = document.getElementById('time-curr-' + id);
-            const tot = document.getElementById('time-tot-' + id);
-            const seek = document.getElementById('seek-' + id);
-
             aud.addEventListener('loadedmetadata', () => {
                 if(deckModes[id] === 'file') {
-                    tot.innerText = formatMinSec(aud.duration);
-                    seek.max = aud.duration;
+                    document.getElementById('time-tot-' + id).innerText = formatMinSec(aud.duration);
+                    document.getElementById('seek-' + id).max = aud.duration;
                 }
             });
             aud.addEventListener('timeupdate', () => {
-                curr.innerText = formatMinSec(aud.currentTime);
-                if (deckModes[id] === 'file' && isFinite(aud.duration)) {
-                    seek.value = aud.currentTime;
-                }
+                document.getElementById('time-curr-' + id).innerText = formatMinSec(aud.currentTime);
+                if (deckModes[id] === 'file' && isFinite(aud.duration)) document.getElementById('seek-' + id).value = aud.currentTime;
             });
-
-            aud.addEventListener('ended', () => {
-                if (isAutoPlay && deckModes[id] === 'file') {
-                    playNextInAuto();
-                }
-            });
+            aud.addEventListener('ended', () => { if (isAutoPlay && deckModes[id] === 'file') playNextInAuto(); });
         });
     }
     setupDeckTimers();
 
     function seekDeck(id) {
         if(deckModes[id] === 'url') return; 
-        const aud = document.getElementById('aud' + id);
-        const seekVal = document.getElementById('seek-' + id).value;
-        aud.currentTime = seekVal;
+        document.getElementById('aud' + id).currentTime = document.getElementById('seek-' + id).value;
     }
 
     async function ensureAudioContext() {
-        if (audioCtx && audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-        }
+        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
     }
 
+    // --- INICIALIZACIÓN DEL MOTOR DE AUDIO ---
     async function init() {
         if(audioCtx) await ensureAudioContext();
-        if(isInit) return;
-        if(isInitializing) return; 
+        if(isInit || isInitializing) return; 
         isInitializing = true;
 
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
-            musicBus = audioCtx.createGain();
-            duckingGain = audioCtx.createGain(); 
-            musicBus.connect(duckingGain);
+            eqBassNode = audioCtx.createBiquadFilter(); eqBassNode.type = 'lowshelf'; eqBassNode.frequency.value = 250;
+            eqTrebleNode = audioCtx.createBiquadFilter(); eqTrebleNode.type = 'highshelf'; eqTrebleNode.frequency.value = 4000;
+            dynCompNode = audioCtx.createDynamicsCompressor();
+            bwFilterNode = audioCtx.createBiquadFilter(); bwFilterNode.type = 'allpass';
+            
+            outSplitter = audioCtx.createChannelSplitter(2);
+            outMerger = audioCtx.createChannelMerger(2);
 
-            masterGain = audioCtx.createGain();
-            // POTENCIA DE EMISIÓN: Limiter "Brickwall" profesional para maximizar el sonido
             const limiter = audioCtx.createDynamicsCompressor();
-            limiter.threshold.value = -2.0; 
-            limiter.knee.value = 0; 
-            limiter.ratio.value = 20; 
-            limiter.attack.value = 0.002; 
-            limiter.release.value = 0.05;
+            limiter.threshold.value = -2.0; limiter.knee.value = 0; limiter.ratio.value = 20; 
+
+            musicBus = audioCtx.createGain(); duckingGain = audioCtx.createGain(); 
+            musicBus.connect(duckingGain);
+            masterGain = audioCtx.createGain();
             
             duckingGain.connect(masterGain);
-            masterGain.connect(limiter);
+            masterGain.connect(eqBassNode);
+            eqBassNode.connect(eqTrebleNode);
+            eqTrebleNode.connect(dynCompNode);
+            dynCompNode.connect(bwFilterNode);
+            bwFilterNode.connect(limiter);
             limiter.connect(audioCtx.destination);
 
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 48000 }
-            });
-            const mSrc = audioCtx.createMediaStreamSource(stream);
+            // Seleccionar Mics Físicos de forma separada
+            const id1 = document.getElementById('sel-mic1').value;
+            const id2 = document.getElementById('sel-mic2').value;
             
-            micGain = audioCtx.createGain(); micGain.gain.value = 0;
-            micComp = audioCtx.createDynamicsCompressor();
+            const stream1 = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: id1 ? {exact: id1} : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 48000 } });
+            const stream2 = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: id2 ? {exact: id2} : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 48000 } });
             
-            /* Ajustes MUY fuertes y claros para la voz */
-            micComp.threshold.value = -22; 
-            micComp.knee.value = 5; 
-            micComp.ratio.value = 4.5; 
-            micComp.attack.value = 0.005; 
-            micComp.release.value = 0.1;
+            const mSrc1 = audioCtx.createMediaStreamSource(stream1);
+            const mSrc2 = audioCtx.createMediaStreamSource(stream2);
+            
+            mic1Gain = audioCtx.createGain(); mic1Comp = audioCtx.createDynamicsCompressor();
+            mic2Gain = audioCtx.createGain(); mic2Comp = audioCtx.createDynamicsCompressor();
+            
+            [mic1Comp, mic2Comp].forEach(c => { c.threshold.value = -22; c.ratio.value = 4.5; c.attack.value = 0.005; c.release.value = 0.1; });
+            
+            mSrc1.connect(mic1Comp).connect(mic1Gain).connect(masterGain);
+            mSrc2.connect(mic2Comp).connect(mic2Gain).connect(masterGain); 
 
-            mSrc.connect(micComp).connect(micGain).connect(masterGain);
-
+            // Grabaciones
             masterDest = audioCtx.createMediaStreamDestination();
             micMovDest = audioCtx.createMediaStreamDestination();
             limiter.connect(masterDest);
+            mic1Gain.connect(micMovDest); mic2Gain.connect(micMovDest);
 
             dAGain = audioCtx.createGain(); dBGain = audioCtx.createGain();
             audioCtx.createMediaElementSource(document.getElementById('audA')).connect(dAGain).connect(musicBus);
             audioCtx.createMediaElementSource(document.getElementById('audB')).connect(dBGain).connect(musicBus);
 
-            // HACK KEEPAWAKE PROFESIONAL (Evita que Chrome duerma la pestaña)
-            const keepAwake = audioCtx.createOscillator();
-            const silentGain = audioCtx.createGain();
-            silentGain.gain.setValueAtTime(0, audioCtx.currentTime);
-            keepAwake.connect(silentGain).connect(audioCtx.destination);
-            keepAwake.start();
-
-            movGain = audioCtx.createGain(); 
-            mov2Gain = audioCtx.createGain();
-            mov3Gain = audioCtx.createGain();
-            mov4Gain = audioCtx.createGain();
-
-            movGain.connect(masterGain); movGain.connect(micMovDest);
-            mov2Gain.connect(masterGain); mov2Gain.connect(micMovDest);
-            mov3Gain.connect(masterGain); mov3Gain.connect(micMovDest);
-            mov4Gain.connect(masterGain); mov4Gain.connect(micMovDest);
-            
-            micGain.connect(micMovDest); 
+            for(let i=1; i<=4; i++) {
+                movGains[i] = audioCtx.createGain();
+                movGains[i].connect(masterGain);
+                movGains[i].connect(micMovDest);
+            }
 
             liveGain = audioCtx.createGain(); liveGain.gain.value = 0;
             liveDest = audioCtx.createMediaStreamDestination();
-            masterGain.connect(liveGain).connect(liveDest);
+            limiter.connect(liveGain).connect(liveDest);
 
             analyzer = audioCtx.createAnalyser();
-            micComp.connect(analyzer);
+            masterGain.connect(analyzer);
 
-            // RESILIENCIA RED: Múltiples servidores STUN para asegurar conectividad en cualquier red (misma IP, NATs, etc)
-            peer = new Peer('maitino-studio-host', {
+            peer = new Peer('maitino-studio-host-v2', {
+                host: 'maitino-peer-server.onrender.com',
+                port: 443,
+                secure: true,
                 config: {
                     'iceServers': [
-                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun.l.google.com:19302' }, 
                         { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' },
-                        { urls: 'stun:stun3.l.google.com:19302' },
-                        { urls: 'stun:stun4.l.google.com:19302' },
                         { urls: 'stun:global.stun.twilio.com:3478' }
                     ]
                 }
@@ -461,75 +611,34 @@
             
             peer.on('connection', conn => {
                 activeDataConns[conn.peer] = conn;
-
                 conn.on('data', data => {
-                    if(data.command === 'check_live') {
-                        if(isBroadcasting && !activeListenerCalls[conn.peer]) {
-                            iniciarLlamadaOyente(conn.peer);
-                        }
-                    }
-                    if(data.type === 'mic_status') {
-                        let statId = null;
-                        if (conn.peer === peerIds.mov1) statId = 'm-stat';
-                        else if (conn.peer === peerIds.mov2) statId = 'm2-stat';
-                        else if (conn.peer === peerIds.mov3) statId = 'm3-stat';
-                        else if (conn.peer === peerIds.mov4) statId = 'm4-stat';
-
-                        if(statId) {
-                            document.getElementById(statId).innerText = data.muted ? "● SILENCIADO EN MÓVIL" : "● ONLINE";
-                            document.getElementById(statId).style.color = data.muted ? "orange" : "#00ffaa";
-                        }
-                    }
+                    if(data.command === 'check_live' && isBroadcasting && !activeListenerCalls[conn.peer]) iniciarLlamadaOyente(conn.peer);
                 });
-
-                conn.on('close', () => {
-                    delete activeDataConns[conn.peer];
-                    if(activeListenerCalls[conn.peer]) {
-                        activeListenerCalls[conn.peer].close();
-                        delete activeListenerCalls[conn.peer];
-                    }
-                });
+                conn.on('close', () => { delete activeDataConns[conn.peer]; });
             });
 
             peer.on('call', call => {
                 call.answer(masterDest.stream);
                 call.on('stream', s => {
-                    let targetId = null;
-                    if (!document.getElementById('remote-audio').srcObject) targetId = 'remote-audio';
-                    else if (!document.getElementById('remote-audio-2').srcObject) targetId = 'remote-audio-2';
-                    else if (!document.getElementById('remote-audio-3').srcObject) targetId = 'remote-audio-3';
-                    else targetId = 'remote-audio-4';
-
-                    const statId = targetId === 'remote-audio' ? 'm-stat' : targetId === 'remote-audio-2' ? 'm2-stat' : targetId === 'remote-audio-3' ? 'm3-stat' : 'm4-stat';
-                    const gainNode = targetId === 'remote-audio' ? movGain : targetId === 'remote-audio-2' ? mov2Gain : targetId === 'remote-audio-3' ? mov3Gain : mov4Gain;
-
-                    if(targetId === 'remote-audio') peerIds.mov1 = call.peer;
-                    else if(targetId === 'remote-audio-2') peerIds.mov2 = call.peer;
-                    else if(targetId === 'remote-audio-3') peerIds.mov3 = call.peer;
-                    else peerIds.mov4 = call.peer;
-
-                    document.getElementById(targetId).srcObject = s;
-                    const source = audioCtx.createMediaStreamSource(s);
-                    source.connect(gainNode);
-
-                    document.getElementById(statId).innerHTML = "● ONLINE";
-                    document.getElementById(statId).style.color = "#00ffaa";
+                    let idx = 1;
+                    for(; idx<=4; idx++) if(!document.getElementById(`remote-audio-${idx}`).srcObject) break;
+                    
+                    if(idx <= 4) {
+                        peerIds[idx] = call.peer;
+                        document.getElementById(`remote-audio-${idx}`).srcObject = s;
+                        audioCtx.createMediaStreamSource(s).connect(movGains[idx]);
+                        const statId = `m${idx}-stat`;
+                        if(document.getElementById(statId)) {
+                            document.getElementById(statId).innerHTML = "● ONLINE";
+                            document.getElementById(statId).style.color = "#00ffaa";
+                        }
+                    }
                 });
-            });
-
-            peer.on('disconnected', () => {
-                if (!peer.destroyed) peer.reconnect();
-            });
-
-            peer.on('error', (err) => {
-                console.error("PeerJS Error:", err);
-                if (err.type === 'network' || err.type === 'disconnected' || err.type === 'server-error') {
-                     setTimeout(() => { if (!peer.destroyed) peer.reconnect(); }, 3000);
-                }
             });
 
             isInit = true;
             isInitializing = false;
+            updateMatrix(); 
             updateGains();
             visualize();
             visualizeExtended();
@@ -537,8 +646,7 @@
 
         } catch (error) {
             isInitializing = false;
-            console.error("Fallo al arrancar el motor de audio:", error);
-            alert("⚠️ FALLO CRÍTICO: Asegúrate de que el micrófono esté permitido.");
+            alert("⚠️ FALLO CRÍTICO: Asegúrate de permitir el micrófono.");
         }
     }
 
@@ -547,65 +655,109 @@
         let call = peer.call(peerId, liveDest.stream);
         activeListenerCalls[peerId] = call;
         call.on('close', () => { delete activeListenerCalls[peerId]; });
-        call.on('error', () => { delete activeListenerCalls[peerId]; });
+    }
+
+    // --- ACTUALIZACIÓN DE LA MATRIZ DE PROCESAMIENTO ---
+    function updateMatrix() {
+        if(!isInit) return;
+        
+        document.getElementById('mx-bass-val').innerText = document.getElementById('mx-bass').value + "dB";
+        document.getElementById('mx-treble-val').innerText = document.getElementById('mx-treble').value + "dB";
+        document.getElementById('mx-thresh-val').innerText = document.getElementById('mx-thresh').value + "dB";
+        document.getElementById('mx-ratio-val').innerText = document.getElementById('mx-ratio').value + ":1";
+
+        eqBassNode.gain.value = parseFloat(document.getElementById('mx-bass').value);
+        eqTrebleNode.gain.value = parseFloat(document.getElementById('mx-treble').value);
+        
+        dynCompNode.threshold.value = parseFloat(document.getElementById('mx-thresh').value);
+        dynCompNode.ratio.value = parseFloat(document.getElementById('mx-ratio').value);
+
+        const bw = document.getElementById('mx-bw').value;
+        if(bw === 'super') { bwFilterNode.type = 'allpass'; }
+        else if(bw === 'uhd') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 20000; }
+        else if(bw === 'fm-hq') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 18000; }
+        else if(bw === 'fm') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 15000; }
+        else if(bw === 'am-hq') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 10000; }
+        else if(bw === 'am') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 9000; }
+        else if(bw === 'lw') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 4500; }
+        else if(bw === 'tel') { bwFilterNode.type = 'bandpass'; bwFilterNode.frequency.value = 1850; bwFilterNode.Q.value = 0.8; }
+        else if(bw === 'sub') { bwFilterNode.type = 'bandpass'; bwFilterNode.frequency.value = 750; bwFilterNode.Q.value = 2.5; }
+
+        const outMode = document.getElementById('mx-out').value;
+        bwFilterNode.disconnect();
+        outSplitter.disconnect(); outMerger.disconnect();
+
+        if (outMode === 'stereo') {
+            bwFilterNode.connect(audioCtx.destination);
+            bwFilterNode.connect(masterDest);
+            bwFilterNode.connect(liveGain);
+        } else {
+            bwFilterNode.connect(outSplitter);
+            
+            if (outMode === 'monosum' || outMode === 'dualmono' || outMode === 'mono') {
+                outSplitter.connect(outMerger, 0, 0); // L -> L
+                outSplitter.connect(outMerger, 1, 0); // R -> L
+                outSplitter.connect(outMerger, 0, 1); // L -> R
+                outSplitter.connect(outMerger, 1, 1); // R -> R
+            } else if (outMode === 'monol') {
+                outSplitter.connect(outMerger, 0, 0); // L -> L
+                outSplitter.connect(outMerger, 0, 1); // L -> R
+            } else if (outMode === 'monor') {
+                outSplitter.connect(outMerger, 1, 0); // R -> L
+                outSplitter.connect(outMerger, 1, 1); // R -> R
+            } else if (outMode === 'inv') {
+                outSplitter.connect(outMerger, 1, 0); // R -> L
+                outSplitter.connect(outMerger, 0, 1); // L -> R
+            }
+            
+            outMerger.connect(audioCtx.destination);
+            outMerger.connect(masterDest);
+            outMerger.connect(liveGain);
+        }
     }
 
     function updateGains() {
         if(!isInit) return;
-        micGain.gain.setTargetAtTime(document.getElementById('b-mic').classList.contains('active') ? document.getElementById('v-mic').value : 0, audioCtx.currentTime, 0.05);
+        mic1Gain.gain.setTargetAtTime(document.getElementById('b-mic1').classList.contains('active') ? document.getElementById('v-mic1').value : 0, audioCtx.currentTime, 0.05);
+        mic2Gain.gain.setTargetAtTime(document.getElementById('b-mic2').classList.contains('active') ? document.getElementById('v-mic2').value : 0, audioCtx.currentTime, 0.05);
+        
         dAGain.gain.value = document.getElementById('v-da').value;
         dBGain.gain.value = document.getElementById('v-db').value;
         
-        movGain.gain.value = m1Muted ? 0 : document.getElementById('v-mov').value;
-        mov2Gain.gain.value = m2Muted ? 0 : document.getElementById('v-mov2').value;
-        mov3Gain.gain.value = m3Muted ? 0 : document.getElementById('v-mov3').value;
-        mov4Gain.gain.value = m4Muted ? 0 : document.getElementById('v-mov4').value;
-        
+        for(let i=1; i<=4; i++) {
+            if(movGains[i]) movGains[i].gain.value = mMuted[i] ? 0 : document.getElementById(`v-mov${i}`).value;
+        }
         masterGain.gain.value = document.getElementById('v-mas').value;
     }
 
-    async function toggleMic() {
-        await init();
-        if(!isInit) return;
-        document.getElementById('b-mic').classList.toggle('active');
-        document.getElementById('b-mic').innerText = document.getElementById('b-mic').classList.contains('active') ? "ABIERTO" : "CERRADO";
+    async function toggleMic(num) {
+        await init(); if(!isInit) return;
+        const b = document.getElementById(`b-mic${num}`);
+        b.classList.toggle('active');
+        b.innerText = b.classList.contains('active') ? "ABIERTO" : "CERRADO";
         updateGains();
     }
 
     async function toggleMov(num) {
-        await init();
-        if(!isInit) return;
-        if(num === 1) {
-            m1Muted = !m1Muted;
-            document.getElementById('b-mov1').innerText = m1Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov1').classList.toggle('active', m1Muted);
-        } else if (num === 2) {
-            m2Muted = !m2Muted;
-            document.getElementById('b-mov2').innerText = m2Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov2').classList.toggle('active', m2Muted);
-        } else if (num === 3) {
-            m3Muted = !m3Muted;
-            document.getElementById('b-mov3').innerText = m3Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov3').classList.toggle('active', m3Muted);
-        } else if (num === 4) {
-            m4Muted = !m4Muted;
-            document.getElementById('b-mov4').innerText = m4Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov4').classList.toggle('active', m4Muted);
-        }
+        await init(); if(!isInit) return;
+        mMuted[num] = !mMuted[num];
+        const b = document.getElementById(`b-mov${num}`);
+        b.innerText = mMuted[num] ? "CERRADO" : "ABIERTO";
+        b.classList.toggle('active', mMuted[num]);
         updateGains();
     }
 
     function toggleDucking() {
         isDucking = !isDucking;
-        const b = document.getElementById('b-duck');
+        const b = document.getElementById('b-duck1');
         b.classList.toggle('active');
-        b.innerText = isDucking ? "AUTO-DUCKING ON" : "AUTO-DUCKING OFF";
+        b.innerText = isDucking ? "DUCKING ON" : "DUCKING OFF";
     }
 
     function processDucking() {
         const data = new Uint8Array(analyzer.frequencyBinCount);
         const check = () => {
-            if(isDucking && document.getElementById('b-mic').classList.contains('active')) {
+            if(isDucking && (document.getElementById('b-mic1').classList.contains('active') || document.getElementById('b-mic2').classList.contains('active'))) {
                 analyzer.getByteFrequencyData(data);
                 let avg = data.reduce((a,b) => a+b)/data.length;
                 let target = avg > 20 ? 0.25 : 1.0;
@@ -618,114 +770,64 @@
         check();
     }
 
-    async function loadD(id, input) { 
-        await init(); 
-        if(!isInit) return;
-        setDeckVisualMode(id, 'file');
-        document.getElementById('aud'+id).src = URL.createObjectURL(input.files[0]); 
-    }
-
+    async function loadD(id, input) { await init(); setDeckVisualMode(id, 'file'); document.getElementById('aud'+id).src = URL.createObjectURL(input.files[0]); }
     async function loadUrl(id) {
         await init();
-        if(!isInit) return;
         const urlInput = document.getElementById('url-' + id).value.trim();
-        if(!urlInput) {
-            alert("Por favor, introduce una URL válida para el Deck " + id);
-            return;
-        }
+        if(!urlInput) return;
         setDeckVisualMode(id, 'url');
-        const aud = document.getElementById('aud' + id);
-        aud.src = urlInput;
-        aud.load();
+        const aud = document.getElementById('aud' + id); aud.src = urlInput; aud.load();
     }
     
     async function playDeck(id) {
         await ensureAudioContext();
-        const p = document.getElementById('aud'+id);
-        const b = document.getElementById('p'+id);
+        const p = document.getElementById('aud'+id); const b = document.getElementById('p'+id);
         if(p.paused) { 
-            p.play().then(() => {
-                b.innerHTML = '<i class="fas fa-pause"></i>';
-                b.style.color = "#00ffaa";
-            }).catch(err => {
-                console.error(err);
-                alert("⚠️ Error: Si es una URL Web, comprueba que está activa y admite CORS.");
-            });
-        }
-        else { 
-            p.pause(); 
-            b.innerHTML = '<i class="fas fa-play"></i>';
-            b.style.color = "#fff"; 
-        }
-    }
-
-    function restartDeck(id) {
-        if(deckModes[id] === 'file') {
-            document.getElementById('aud'+id).currentTime = 0;
-        }
+            p.play().then(() => { b.innerHTML = '<i class="fas fa-pause"></i>'; b.style.color = "#00ffaa"; }).catch(err => console.error(err));
+        } else { p.pause(); b.innerHTML = '<i class="fas fa-play"></i>'; b.style.color = "#fff"; }
     }
 
     function toggleLoop(id) {
         const p = document.getElementById('aud'+id);
-        const b = document.getElementById('l'+id);
-        p.loop = !p.loop;
-        b.classList.toggle('active', p.loop);
+        p.loop = !p.loop; document.getElementById('l'+id).classList.toggle('active', p.loop);
     }
 
     async function toggleLive() {
-        await init(); 
-        if(!isInit) return; 
-
+        await init(); if(!isInit) return; 
         const b = document.getElementById('b-live');
         if(!isBroadcasting) {
             isBroadcasting = true;
             liveGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 1);
             b.innerText = "● EN EL AIRE"; b.style.background = "red";
             startTimes.live = Date.now();
-            intervals.live = setInterval(() => document.getElementById('t-live').innerText = `📡 EN AIRE: ${formatTime(Date.now() - startTimes.live)}`, 1000);
-
-            for(let peerId in activeDataConns) {
-                if(!activeListenerCalls[peerId]) {
-                    iniciarLlamadaOyente(peerId);
-                }
-            }
+            intervals.live = setInterval(() => document.getElementById('t-live').innerText = `📡 ANT: ${formatTimeNoMs(Date.now() - startTimes.live)}`, 1000); 
+            for(let peerId in activeDataConns) if(!activeListenerCalls[peerId]) iniciarLlamadaOyente(peerId);
         } else {
             isBroadcasting = false;
             liveGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
-            
-            Object.values(activeListenerCalls).forEach(call => call.close());
-            activeListenerCalls = {};
-            
+            Object.values(activeListenerCalls).forEach(call => call.close()); activeListenerCalls = {};
             setTimeout(() => { b.innerText = "CONECTAR ANTENA"; b.style.background = "#00e676"; }, 1000);
-            clearInterval(intervals.live);
-            document.getElementById('t-live').innerText = "📡 EN AIRE: OFF";
+            clearInterval(intervals.live); document.getElementById('t-live').innerText = "📡 ANT: 00:00";
         }
     }
 
     async function rec(type) {
-        await init(); 
-        if(!isInit) return;
-
+        await init(); if(!isInit) return;
         const b = document.getElementById('r-'+(type === 'master' ? 'mas' : type));
         if(!recorders[type]) {
             const st = (type === 'master') ? masterDest.stream : micMovDest.stream;
-            recorders[type] = new MediaRecorder(st, { audioBitsPerSecond: 256000 }); 
+            recorders[type] = new MediaRecorder(st, { audioBitsPerSecond: 320000 }); 
             chunks[type] = [];
             recorders[type].ondataavailable = e => chunks[type].push(e.data);
             recorders[type].onstop = () => {
                 const blob = new Blob(chunks[type], {type: 'audio/webm'});
-                const a = document.createElement('a'); 
-                a.href = URL.createObjectURL(blob);
-                
-                let customPrefix = document.getElementById('rec-filename').value.trim();
-                if(!customPrefix) customPrefix = "MAITINO";
-                a.download = `${customPrefix}_${type.toUpperCase()}_${Date.now()}.webm`;
-                
-                a.click();
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                let customPrefix = document.getElementById('rec-filename').value.trim() || "MAITINO_REC";
+                a.download = `${customPrefix}_${type.toUpperCase()}_${Date.now()}.webm`; a.click();
             };
             recorders[type].start(); b.classList.add('active');
             startTimes[type] = Date.now();
-            intervals[type] = setInterval(() => document.getElementById('t-'+type).innerText = `🔴 ${type.toUpperCase()}: ${formatTime(Date.now() - startTimes[type])}`, 1000);
+            intervals[type] = setInterval(() => document.getElementById('t-'+type).innerText = `🔴 ${type.slice(0,3).toUpperCase()}: ${formatTimeNoMs(Date.now() - startTimes[type])}`, 1000); 
         } else {
             recorders[type].stop(); delete recorders[type]; b.classList.remove('active');
             clearInterval(intervals[type]);
@@ -745,50 +847,37 @@
         frame();
     }
 
+    // --- ESPECTRO EXTENDIDO GIGANTE ---
     function visualizeExtended() {
         const vAnExt = audioCtx.createAnalyser();
-        vAnExt.fftSize = 512;
+        vAnExt.fftSize = 2048;
         masterGain.connect(vAnExt);
         
         const cvExt = document.getElementById('cv-extended');
         const ctExt = cvExt.getContext('2d');
-        
-        cvExt.width = cvExt.offsetWidth * 2; 
-        cvExt.height = cvExt.offsetHeight * 2;
+        cvExt.width = cvExt.offsetWidth * 2; cvExt.height = cvExt.offsetHeight * 2;
         
         const bufferLength = vAnExt.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
-
         const gradient = ctExt.createLinearGradient(0, cvExt.height, 0, 0);
-        gradient.addColorStop(0, '#00ffaa'); 
-        gradient.addColorStop(0.6, '#00b3ff'); 
-        gradient.addColorStop(1, '#ff1a1a'); 
+        gradient.addColorStop(0, '#00ffaa'); gradient.addColorStop(0.5, '#00b3ff'); gradient.addColorStop(1, '#ff1a1a'); 
 
         const draw = () => {
             requestAnimationFrame(draw);
             vAnExt.getByteFrequencyData(dataArray);
+            ctExt.fillStyle = 'rgba(5, 5, 8, 0.7)'; ctExt.fillRect(0, 0, cvExt.width, cvExt.height);
             
-            ctExt.fillStyle = 'rgba(3, 3, 5, 0.6)';
-            ctExt.fillRect(0, 0, cvExt.width, cvExt.height);
-            
-            const barWidth = (cvExt.width / bufferLength) * 1.5;
+            const barWidth = (cvExt.width / bufferLength) * 3;
             let x = 0;
             
-            ctExt.shadowBlur = 10;
-            ctExt.shadowColor = 'rgba(0, 255, 170, 0.3)';
-            ctExt.fillStyle = gradient;
+            ctExt.shadowBlur = 15; ctExt.shadowColor = 'rgba(0, 255, 170, 0.4)'; ctExt.fillStyle = gradient;
             
             for(let i = 0; i < bufferLength; i++) {
-                const barHeight = (dataArray[i] / 255) * cvExt.height;
-                
+                const barHeight = (dataArray[i] / 255) * cvExt.height * 1.2;
                 ctExt.beginPath();
-                if(ctExt.roundRect) {
-                    ctExt.roundRect(x, cvExt.height - barHeight, barWidth - 1, barHeight, [3, 3, 0, 0]);
-                } else {
-                    ctExt.rect(x, cvExt.height - barHeight, barWidth - 1, barHeight);
-                }
+                if(ctExt.roundRect) ctExt.roundRect(x, cvExt.height - barHeight, barWidth - 1, barHeight, [4, 4, 0, 0]);
+                else ctExt.rect(x, cvExt.height - barHeight, barWidth - 1, barHeight);
                 ctExt.fill();
-                
                 x += barWidth;
             }
         };
@@ -800,82 +889,42 @@
         const btn = document.getElementById('btn-autoplay');
         btn.classList.toggle('active', isAutoPlay);
         btn.innerText = isAutoPlay ? "MODO AUTO: ON" : "MODO AUTO: OFF";
-        
-        if (isAutoPlay && playlistFilesArray.length > 0) {
-            const audA = document.getElementById('audA');
-            const audB = document.getElementById('audB');
-            if (audA.paused && audB.paused) {
-                playNextInAuto();
-            }
-        }
+        if (isAutoPlay && playlistFilesArray.length > 0 && document.getElementById('audA').paused) playNextInAuto();
     }
 
     function playNextInAuto() {
         if (!isAutoPlay || playlistFilesArray.length === 0) return;
-        
-        currentAutoIndex++;
-        if (currentAutoIndex >= playlistFilesArray.length) {
-            currentAutoIndex = 0; 
-        }
-        
-        const file = playlistFilesArray[currentAutoIndex];
-        
+        currentAutoIndex = (currentAutoIndex + 1) % playlistFilesArray.length;
         init().then(() => {
             const audA = document.getElementById('audA');
             setDeckVisualMode('A', 'file');
-            audA.src = URL.createObjectURL(file);
-            
-            audA.loop = false;
-            document.getElementById('lA').classList.remove('active');
-            
-            audA.play();
-            document.getElementById('pA').innerHTML = '<i class="fas fa-pause"></i>';
+            audA.src = URL.createObjectURL(playlistFilesArray[currentAutoIndex]);
+            audA.loop = false; document.getElementById('lA').classList.remove('active');
+            audA.play(); document.getElementById('pA').innerHTML = '<i class="fas fa-pause"></i>';
         });
     }
 
     function handlePlaylistUpload(input) {
         const files = Array.from(input.files);
         playlistFilesArray = playlistFilesArray.concat(files);
-        
-        const list = document.getElementById('pl-list');
-        const emptyMsg = document.getElementById('pl-empty');
-        
-        if(files.length > 0 && emptyMsg) {
-            emptyMsg.remove();
-        }
+        if(files.length > 0 && document.getElementById('pl-empty')) document.getElementById('pl-empty').remove();
 
         files.forEach(file => {
-            const li = document.createElement('li');
-            li.className = 'playlist-item';
-            
+            const li = document.createElement('li'); li.className = 'playlist-item';
             const nameSpan = document.createElement('span');
             nameSpan.innerText = file.name.length > 30 ? file.name.substring(0, 30) + '...' : file.name;
-            nameSpan.title = file.name;
+            
+            const actions = document.createElement('div'); actions.className = 'pl-actions';
+            
+            const btnA = document.createElement('button'); btnA.innerText = 'Deck A';
+            btnA.onclick = async () => { await init(); setDeckVisualMode('A', 'file'); document.getElementById('audA').src = URL.createObjectURL(file); };
+            
+            const btnB = document.createElement('button'); btnB.innerText = 'Deck B';
+            btnB.onclick = async () => { await init(); setDeckVisualMode('B', 'file'); document.getElementById('audB').src = URL.createObjectURL(file); };
 
-            const actions = document.createElement('div');
-            actions.className = 'pl-actions';
-
-            const btnA = document.createElement('button');
-            btnA.innerText = 'Cargar en A';
-            btnA.onclick = async () => {
-                await init();
-                setDeckVisualMode('A', 'file');
-                document.getElementById('audA').src = URL.createObjectURL(file);
-            };
-
-            const btnB = document.createElement('button');
-            btnB.innerText = 'Cargar en B';
-            btnB.onclick = async () => {
-                await init();
-                setDeckVisualMode('B', 'file');
-                document.getElementById('audB').src = URL.createObjectURL(file);
-            };
-
-            actions.appendChild(btnA);
-            actions.appendChild(btnB);
-            li.appendChild(nameSpan);
-            li.appendChild(actions);
-            list.appendChild(li);
+            actions.appendChild(btnA); actions.appendChild(btnB);
+            li.appendChild(nameSpan); li.appendChild(actions);
+            document.getElementById('pl-list').appendChild(li);
         });
     }
 </script>
