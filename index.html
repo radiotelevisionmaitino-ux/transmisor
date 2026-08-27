@@ -1,5 +1,7 @@
 
-<!DOCTYPE html><html lang="es"><head>
+<!DOCTYPE html>
+<html lang="es">
+<head>
     <meta charset="UTF-8">
     <title>RADIO MAITINO ESTUDIO 1 | TRANSMISOR Y GRABADOR PRINCIPAL</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -13,6 +15,18 @@
         .main-title-container h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: 3px; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
         .main-title-container h2 { margin: 0; font-size: 0.75rem; font-weight: 300; letter-spacing: 5px; color: var(--accent); text-transform: uppercase; }
         .date-time-display { margin-top: 8px; font-size: 1.1rem; color: #ccc; letter-spacing: 1px; font-weight: 500; text-transform: capitalize; }
+        
+        /* Estilo para la nueva hora local */
+        .local-time-large {
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
 
         /* --- ESTILO RELOJES Y CRONÓMETROS --- */
         .header-container { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1700px; margin-bottom: 15px; padding: 8px 15px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid var(--border); position: relative; }
@@ -63,12 +77,21 @@
         .btn-duck.active { background: var(--ducking); color: white; border-style: solid; }
         .btn-live { background: #00e676; color: #000; height: 50px; font-size: 1rem; width: 100%; margin-top: 5px; transition: 0.3s; }
         
+        /* Botón Iniciar Sistema Privado */
+        .btn-init-system { background: #444; color: #fff; height: 40px; font-size: 0.85rem; width: 100%; margin-top: 5px; transition: 0.3s; border-radius: 6px; cursor: pointer; border: 1px solid #555;}
+        .btn-init-system:hover { background: #555; }
+        .btn-init-system.active { background: #2196f3; border-color: #2196f3; color: #fff; box-shadow: 0 0 10px rgba(33,150,243,0.5); }
+        
         .crossfader-container { grid-column: 6 / 8; background: #0a0a0d; border-radius: 8px; padding: 8px; border: 1px solid #222; display: flex; align-items: center; justify-content: space-between; margin-top: -5px; }
         .crossfader-container span { font-size: 0.6rem; color: #888; font-weight: bold; }
         .cf-slider { width: 100%; margin: 0 10px; accent-color: #00b3ff; }
 
         h3 { font-size: 0.7rem; text-transform: uppercase; color: #888; margin: 0; }
         
+        /* Etiqueta editable para móviles y decks */
+        .mov-name-input { background: transparent; border: none; border-bottom: 1px dashed #333; color: var(--accent); font-size: 0.6rem; text-align: center; width: 90%; margin: 4px 0 6px 0; outline: none; font-family: 'Inter', sans-serif; text-transform: uppercase; transition: 0.3s; }
+        .mov-name-input:focus { border-bottom-color: var(--accent); }
+
         .timers { font-family: 'Inter', sans-serif; font-size: 0.9rem; text-align: left; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px; margin-top: 10px; letter-spacing: 1px;}
         .t-row { margin: 6px 0; color: #888; font-weight: bold; }
         .t-row.active { color: var(--danger); }
@@ -107,7 +130,8 @@
     <h1>Radio Maitino</h1>
     <h2>Estudio de transmisión y grabación principal</h2>
     <div class="date-time-display">
-        <span id="main-date-local">CARGANDO FECHA...</span> &nbsp;|&nbsp; <span id="local-time" style="font-weight: 700;">00:00:00</span>
+        <div id="main-date-local">CARGANDO FECHA...</div>
+        <div class="local-time-large" id="local-time">00:00:00</div>
     </div>
 </div>
 
@@ -172,6 +196,7 @@
             <!-- MICRÓFONO GENERAL ÚNICO -->
             <div class="strip">
                 <h3>Micrófono</h3>
+                <div style="height: 17px;"></div>
                 <div class="trim-container">
                     <span>TRIM</span>
                     <input type="range" id="trim-mic1" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
@@ -188,6 +213,7 @@
             <!-- MOVIL 1 -->
             <div class="strip">
                 <h3>Móvil 1</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
                 <div id="m1-stat" style="font-size: 0.55rem; color: gray;">OFFLINE</div>
                 <div class="trim-container">
                     <span>TRIM</span>
@@ -199,12 +225,13 @@
                     <input type="range" id="v-mov1" class="fader" min="0" max="1.5" step="0.01" value="0.8" oninput="updateGains()">
                 </div>
                 <button class="btn-state active" id="b-mov1" onclick="toggleMov(1)">ON AIR</button>
-                <audio id="remote-audio-1" autoplay hidden></audio>
+                <audio id="remote-audio-1" autoplay hidden muted></audio>
             </div>
 
             <!-- MOVIL 2 -->
             <div class="strip">
                 <h3>Móvil 2</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
                 <div id="m2-stat" style="font-size: 0.55rem; color: gray;">OFFLINE</div>
                 <div class="trim-container">
                     <span>TRIM</span>
@@ -216,12 +243,13 @@
                     <input type="range" id="v-mov2" class="fader" min="0" max="1.5" step="0.01" value="0.8" oninput="updateGains()">
                 </div>
                 <button class="btn-state active" id="b-mov2" onclick="toggleMov(2)">ON AIR</button>
-                <audio id="remote-audio-2" autoplay hidden></audio>
+                <audio id="remote-audio-2" autoplay hidden muted></audio>
             </div>
 
             <!-- MOVIL 3 -->
             <div class="strip">
                 <h3>Móvil 3</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
                 <div id="m3-stat" style="font-size: 0.55rem; color: gray;">OFFLINE</div>
                 <div class="trim-container">
                     <span>TRIM</span>
@@ -233,12 +261,13 @@
                     <input type="range" id="v-mov3" class="fader" min="0" max="1.5" step="0.01" value="0.8" oninput="updateGains()">
                 </div>
                 <button class="btn-state active" id="b-mov3" onclick="toggleMov(3)">ON AIR</button>
-                <audio id="remote-audio-3" autoplay hidden></audio>
+                <audio id="remote-audio-3" autoplay hidden muted></audio>
             </div>
 
             <!-- MOVIL 4 -->
             <div class="strip">
                 <h3>Móvil 4</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
                 <div id="m4-stat" style="font-size: 0.55rem; color: gray;">OFFLINE</div>
                 <div class="trim-container">
                     <span>TRIM</span>
@@ -250,12 +279,13 @@
                     <input type="range" id="v-mov4" class="fader" min="0" max="1.5" step="0.01" value="0.8" oninput="updateGains()">
                 </div>
                 <button class="btn-state active" id="b-mov4" onclick="toggleMov(4)">ON AIR</button>
-                <audio id="remote-audio-4" autoplay hidden></audio>
+                <audio id="remote-audio-4" autoplay hidden muted></audio>
             </div>
 
             <!-- DECK A -->
             <div class="strip" style="border-color: #00b3ff;">
                 <h3>Deck A</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
                 <div class="trim-container">
                     <span>TRIM</span>
                     <input type="range" id="trim-da" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
@@ -265,24 +295,29 @@
                     <canvas class="vu-meter" id="vu-da" width="10" height="150"></canvas>
                     <input type="range" id="v-da" class="fader" min="0" max="1" step="0.01" value="0.8" oninput="updateGains()">
                 </div>
-                <button class="btn" onclick="document.getElementById('fA').click()" style="margin-bottom: 5px; width: 100%; padding: 4px;"><i class="fas fa-folder-open"></i></button>
+                
                 <div style="display: flex; gap: 4px; margin-bottom: 4px;">
-                    <input type="text" id="url-A" class="config-input" placeholder="URL Audio" style="font-size: 0.6rem; padding: 4px; margin: 0; flex: 1;">
-                    <button class="btn" onclick="loadUrl('A')" style="padding: 4px 8px;"><i class="fas fa-link"></i></button>
+                    <button class="btn" onclick="document.getElementById('fA').click()" style="flex: 1; padding: 4px; font-size: 0.65rem;"><i class="fas fa-folder-open"></i> ARCHIVO</button>
+                    <input type="file" id="fA" hidden onchange="loadD('A',this)">
                 </div>
+                <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                    <input type="url" id="url-A" class="config-input" placeholder="URL Directo..." style="font-size: 0.6rem; padding: 4px; margin: 0; flex: 1;">
+                    <button class="btn" onclick="loadUrl('A')" style="padding: 4px 8px; color: var(--danger);"><i class="fas fa-satellite-dish"></i></button>
+                </div>
+                
                 <div style="display: flex; gap: 4px;">
                     <button class="btn" id="pA" onclick="playDeck('A')" style="flex: 1; padding: 6px;"><i class="fas fa-play"></i></button>
                     <button class="btn btn-loop active" id="lA" onclick="toggleLoop('A')" style="flex: 1; padding: 6px;"><i class="fas fa-repeat"></i></button>
                 </div>
                 <div class="deck-timer-container"><span id="time-curr-A">00:00:00</span><span id="time-tot-A">00:00:00</span></div>
                 <input type="range" class="seek-bar" id="seek-A" min="0" max="100" value="0" step="0.1" oninput="seekDeck('A')">
-                <input type="file" id="fA" hidden onchange="loadD('A',this)">
                 <audio id="audA" crossorigin="anonymous" loop></audio>
             </div>
 
             <!-- DECK B -->
             <div class="strip" style="border-color: #00b3ff;">
                 <h3>Deck B</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
                 <div class="trim-container">
                     <span>TRIM</span>
                     <input type="range" id="trim-db" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
@@ -292,18 +327,22 @@
                     <canvas class="vu-meter" id="vu-db" width="10" height="150"></canvas>
                     <input type="range" id="v-db" class="fader" min="0" max="1" step="0.01" value="0.8" oninput="updateGains()">
                 </div>
-                <button class="btn" onclick="document.getElementById('fB').click()" style="margin-bottom: 5px; width: 100%; padding: 4px;"><i class="fas fa-folder-open"></i></button>
+                
                 <div style="display: flex; gap: 4px; margin-bottom: 4px;">
-                    <input type="text" id="url-B" class="config-input" placeholder="URL Audio" style="font-size: 0.6rem; padding: 4px; margin: 0; flex: 1;">
-                    <button class="btn" onclick="loadUrl('B')" style="padding: 4px 8px;"><i class="fas fa-link"></i></button>
+                    <button class="btn" onclick="document.getElementById('fB').click()" style="flex: 1; padding: 4px; font-size: 0.65rem;"><i class="fas fa-folder-open"></i> ARCHIVO</button>
+                    <input type="file" id="fB" hidden onchange="loadD('B',this)">
                 </div>
+                <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                    <input type="url" id="url-B" class="config-input" placeholder="URL Directo..." style="font-size: 0.6rem; padding: 4px; margin: 0; flex: 1;">
+                    <button class="btn" onclick="loadUrl('B')" style="padding: 4px 8px; color: var(--danger);"><i class="fas fa-satellite-dish"></i></button>
+                </div>
+
                 <div style="display: flex; gap: 4px;">
                     <button class="btn" id="pB" onclick="playDeck('B')" style="flex: 1; padding: 6px;"><i class="fas fa-play"></i></button>
                     <button class="btn btn-loop active" id="lB" onclick="toggleLoop('B')" style="flex: 1; padding: 6px;"><i class="fas fa-repeat"></i></button>
                 </div>
                 <div class="deck-timer-container"><span id="time-curr-B">00:00:00</span><span id="time-tot-B">00:00:00</span></div>
                 <input type="range" class="seek-bar" id="seek-B" min="0" max="100" value="0" step="0.1" oninput="seekDeck('B')">
-                <input type="file" id="fB" hidden onchange="loadD('B',this)">
                 <audio id="audB" crossorigin="anonymous" loop></audio>
             </div>
 
@@ -445,6 +484,7 @@
         <div class="mixer" style="grid-template-columns: 1fr; gap: 8px;">
             <h3>📡 Transmisión Redundante</h3>
             <button class="btn btn-live" id="b-live" onclick="toggleLive()">CONECTAR ANTENA</button>
+            <button class="btn btn-init-system" id="btn-init-private" onclick="initPrivateServer()">INICIAR SISTEMA (SERVIDOR PRIVADO)</button>
             <hr style="width:100%; border:0; border-top:1px solid #333; margin: 5px 0;">
             
             <h3>🔴 Grabación</h3>
@@ -486,11 +526,12 @@
     let anMov = [];
 
     // Doble Conectividad PeerJS
-    let peerPrivate, peerPublic;
+    let peerPrivate;
     let isInit = false, isInitializing = false, isDucking = false, isBroadcasting = false;
     let activeListenerCalls = {};
     let activeDataConns = {};
     let peerIds = [null, null, null, null, null];
+    let privateServerInit = false;
     
     // Estados lógicos de canales (Inician ABIERTOS / ON AIR por defecto)
     let mMicMuted = false;
@@ -710,6 +751,75 @@
 
     function seekDeck(id) { if(deckModes[id] !== 'url') document.getElementById('aud' + id).currentTime = document.getElementById('seek-' + id).value; }
     async function ensureAudioContext() { if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); }
+    
+    // Iniciar servidor privado independiente del init general
+    function initPrivateServer() {
+        if(privateServerInit) return;
+        const btnInit = document.getElementById('btn-init-private');
+        btnInit.innerText = "INICIANDO SISTEMA...";
+        
+        peerPrivate = new Peer('maitino-studio-host-v2', { host: 'maitino-peer-server.onrender.com', port: 443, secure: true });
+        
+        peerPrivate.on('open', () => {
+            privateServerInit = true;
+            btnInit.innerText = "SISTEMA INICIADO";
+            btnInit.classList.add('active');
+        });
+        
+        peerPrivate.on('error', () => {
+            btnInit.innerText = "ERROR EN SERVIDOR";
+            setTimeout(() => { btnInit.innerText = "INICIAR SISTEMA (SERVIDOR PRIVADO)"; }, 3000);
+        });
+        
+        // Array para rastrear qué canales móviles están en uso
+        let activeMovCalls = [false, false, false, false, false];
+        
+        peerPrivate.on('call', async (call) => {
+            await init(); // Asegurar que el contexto de audio esté listo
+            
+            // 1. Contesta inyectando el bus de audio maestro del directo (Retorno)
+            call.answer(liveDest.stream);
+
+            // 2. Captura la voz de la Móvil y la mete a la mesa
+            call.on('stream', (remoteStream) => {
+                // Buscar el primer canal de Móvil disponible (del 1 al 4)
+                let slot = 1;
+                for(let i = 1; i <= 4; i++) {
+                    if(!activeMovCalls[i]) {
+                        slot = i;
+                        break;
+                    }
+                }
+                activeMovCalls[slot] = true;
+
+                // Asignar al reproductor HTML (silenciado para no crear eco)
+                const audioMovil = document.getElementById('remote-audio-' + slot);
+                audioMovil.srcObject = remoteStream;
+                audioMovil.play().catch(() => {});
+
+                // Conecta la voz entrante pura al TRIM del canal correspondiente
+                const movSrc = audioCtx.createMediaStreamSource(remoteStream);
+                try { movSrc.disconnect(); } catch(e){} // Prevenir doble enrutamiento
+                movSrc.connect(movTrims[slot]);
+
+                // Cambia el indicador a verde
+                const stat = document.getElementById('m' + slot + '-stat');
+                if (stat) {
+                    stat.innerText = "ONLINE";
+                    stat.style.color = "#00ffaa";
+                }
+
+                // Liberar el canal cuando la Móvil cuelgue o se desconecte
+                call.on('close', () => {
+                    activeMovCalls[slot] = false;
+                    if (stat) {
+                        stat.innerText = "OFFLINE";
+                        stat.style.color = "gray";
+                    }
+                });
+            });
+        });
+    }
 
     // --- INICIALIZACIÓN MOTOR ---
     async function init() {
@@ -804,6 +914,12 @@
                 movTrims[i] = audioCtx.createGain();
                 movGains[i] = audioCtx.createGain(); movGains[i].gain.value = 0.8;
                 movPFLs[i] = audioCtx.createGain(); movPFLs[i].gain.value = 0;
+
+                // LA CIRUGÍA: Conectar los cables a la mesa principal
+                movTrims[i].connect(movGains[i]);
+                movGains[i].connect(masterGain);
+                movGains[i].connect(micMovDest); // Para que se grabe
+                movTrims[i].connect(movPFLs[i]).connect(pflDest); // Para el botón CUE
             }
 
             // CREACION DE ANALIZADORES VU POR CANAL
@@ -815,24 +931,6 @@
 
             analyzer = audioCtx.createAnalyser();
             limiter.connect(analyzer); // Visualiza el audio POST efectos en gráfico inferior
-
-            // --- INYECCIÓN DE CIRUGÍA PEERJS PARA CONEXIÓN CON SINTONIZADOR ---
-            if (!peerPrivate || !peerPublic) {
-                peerPrivate = new Peer('maitino-studio-host-v2', { host: 'maitino-peer-server.onrender.com', port: 443, secure: true });
-                peerPublic = new Peer('maitino-studio-host-public-v2', { config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
-                
-                const answerCall = (call) => {
-                    // Contesta inyectando el bus de audio maestro del directo 
-                    call.answer(liveDest.stream);
-                };
-                
-                peerPrivate.on('call', answerCall);
-                peerPublic.on('call', answerCall);
-                
-                // Opcional: escuchar datos por si el sintonizador manda comandos check_live
-                peerPrivate.on('connection', (conn) => { conn.on('data', (d) => console.log('Ping recibido privado', d)); });
-                peerPublic.on('connection', (conn) => { conn.on('data', (d) => console.log('Ping recibido público', d)); });
-            }
 
             isInit = true; isInitializing = false;
             updateMatrix(); updateTrims(); updateGains(); visualize(); processDucking();
@@ -975,14 +1073,24 @@
         document.getElementById('aud'+id).src = URL.createObjectURL(input.files[0]); 
     }
     
+    // Función Mejorada para Evitar Cuelgues en Enlaces de Directo
     async function loadUrl(id) {
         await init(); 
         const urlInput = document.getElementById('url-' + id).value.trim(); 
         if(!urlInput) return;
         setDeckVisualMode(id, 'url'); 
         const aud = document.getElementById('aud' + id); 
-        aud.src = urlInput; 
+        
+        // Purgar caché para forzar reconexión limpia
+        aud.pause();
+        aud.removeAttribute('src'); 
         aud.load();
+        
+        setTimeout(() => {
+            aud.src = urlInput; 
+            aud.load();
+            playDeck(id); // Autoejecutar para evitar silencio
+        }, 50);
     }
     
     async function playDeck(id) {
