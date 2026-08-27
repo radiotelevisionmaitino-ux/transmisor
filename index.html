@@ -22,8 +22,8 @@
         .clock-display { font-family: 'Inter', sans-serif; font-size: 3rem; color: #fff; font-weight: 200; margin: 0; line-height: 1; display: flex; align-items: center; justify-content: center; }
         .utc-badge { font-size: 1rem; color: var(--accent); margin-left: 8px; font-weight: 600; }
         
-        /* NEON LIVE CENTRADO */
-        .neon-live { font-size: 2.2rem; font-weight: 900; color: #333; text-shadow: none; border: 3px solid #333; padding: 6px 20px; border-radius: 8px; transition: 0.3s; opacity: 0.5; letter-spacing: 4px; }
+        /* NEON LIVE ANCHO PANORÁMICO */
+        .neon-live { font-size: 2.2rem; font-weight: 900; color: #333; text-shadow: none; border: 3px solid #333; padding: 6px 45px; border-radius: 8px; transition: 0.3s; opacity: 0.5; letter-spacing: 12px; text-align: center; }
         .neon-live.on-air { color: #ff0000; border-color: #ff0000; text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; opacity: 1; box-shadow: inset 0 0 15px rgba(255,0,0,0.5); }
 
         .sw-controls { display: flex; gap: 8px; margin-top: 8px; align-items: center; justify-content: flex-end; }
@@ -112,12 +112,21 @@
 </div>
 
 <div class="header-container">
-    <!-- IZQUIERDA: HORA UTC -->
-    <div class="clock-section" style="flex: 1; align-items: flex-start;">
-        <div class="date-display">TIEMPO UNIVERSAL</div>
-        <div class="clock-display">
-            <span id="utc-time">00:00</span>
-            <span class="utc-badge">UTC</span>
+    <!-- IZQUIERDA: HORA UTC Y CLIMA ELCHE -->
+    <div class="clock-section" style="flex: 1; flex-direction: row; align-items: center; gap: 20px;">
+        <div>
+            <div class="date-display">TIEMPO UNIVERSAL</div>
+            <div class="clock-display">
+                <span id="utc-time">00:00</span>
+                <span class="utc-badge">UTC</span>
+            </div>
+        </div>
+        <div style="border-left: 1px solid #333; padding-left: 20px; display: flex; flex-direction: column; justify-content: center;">
+            <div class="date-display">ELCHE, ESP</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 1.4rem; font-weight: 700; color: var(--accent); font-family: 'Inter', sans-serif;">
+                <i class="fas fa-circle-notch fa-spin" id="wx-icon"></i> <span id="wx-temp">--°C</span>
+            </div>
+            <div id="wx-desc" style="font-size: 0.7rem; color: #888; text-transform: uppercase; margin-top: 2px;">Conectando...</div>
         </div>
     </div>
     
@@ -501,8 +510,39 @@
     let isAutoPlay = false, playlistFilesArray = [], currentAutoIndex = -1, deckModes = { A: 'file', B: 'file' };
     let crossfadingInProgress = false;
     
-    // Pips
+    // Pips (GTS)
     let pipsEnabled = true, lastPipSec = -1;
+
+    // API Open-Meteo para Elche
+    async function fetchWeather() {
+        try {
+            // Coordenadas de Elche (Aprox: 38.2669, -0.6984)
+            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.2669&longitude=-0.6984&current_weather=true');
+            const data = await res.json();
+            const temp = Math.round(data.current_weather.temperature);
+            const code = data.current_weather.weathercode;
+            
+            document.getElementById('wx-temp').innerText = temp + '°C';
+            
+            // Decodificar condición WMO (Simplificada)
+            let desc = 'Despejado'; let icon = 'fa-sun';
+            if (code >= 1 && code <= 3) { desc = 'P. Nublado'; icon = 'fa-cloud-sun'; }
+            else if (code >= 45 && code <= 48) { desc = 'Niebla'; icon = 'fa-smog'; }
+            else if (code >= 51 && code <= 67) { desc = 'Llovizna'; icon = 'fa-cloud-rain'; }
+            else if (code >= 71 && code <= 82) { desc = 'Lluvia'; icon = 'fa-cloud-showers-heavy'; }
+            else if (code >= 95 && code <= 99) { desc = 'Tormenta'; icon = 'fa-bolt'; }
+            
+            document.getElementById('wx-desc').innerText = desc;
+            document.getElementById('wx-icon').className = 'fas ' + icon;
+        } catch (e) {
+            document.getElementById('wx-temp').innerText = 'N/A';
+            document.getElementById('wx-desc').innerText = 'Error red';
+            document.getElementById('wx-icon').className = 'fas fa-exclamation-triangle';
+        }
+    }
+    // Cargar clima inicial y actualizar cada 15 mins
+    fetchWeather();
+    setInterval(fetchWeather, 900000);
 
     // --- CRONÓMETROS ---
     function formatSwMs(ms) {
@@ -561,7 +601,7 @@
         updateCdDisplay();
     }
 
-    // --- RELOJES PRINCIPALES Y PIPS BBC ---
+    // --- RELOJES PRINCIPALES Y PIPS GTS ---
     function updateClocks() {
         const now = new Date();
         const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
@@ -575,10 +615,10 @@
         const mUTC = String(now.getUTCMinutes()).padStart(2, '0');
         document.getElementById('utc-time').innerText = `${hUTC}:${mUTC}`;
         
-        checkPipsBBC(now);
+        checkPipsGTS(now);
     }
-    setInterval(updateClocks, 1000);
-    updateClocks();
+    // Comprobar reloj 5 veces por segundo para lanzar el audio de forma impecable sin desincronización
+    setInterval(updateClocks, 200);
 
     function formatTimeNoMs(ms) {
         if(ms < 0) ms = 0;
@@ -600,6 +640,8 @@
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.frequency.value = 1000; 
+        
+        // Conexión del PIP directo a la salida de monitoreo y broadcast
         osc.connect(gain); gain.connect(masterDest); gain.connect(audioCtx.destination); 
         
         const now = audioCtx.currentTime;
@@ -609,16 +651,19 @@
         osc.start(now); osc.stop(now + duration);
     }
 
-    function checkPipsBBC(now) {
-        if (!pipsEnabled || !audioCtx) return;
+    function checkPipsGTS(now) {
+        if (!pipsEnabled || !audioCtx || audioCtx.state === 'suspended') return;
         const m = now.getMinutes(), s = now.getSeconds();
-        if (m === 59) {
-            if (s >= 55 && s <= 59 && lastPipSec !== s) {
-                lastPipSec = s;
-                playPip(s === 59 ? 'long' : 'short');
-            }
-        } else {
-            lastPipSec = -1;
+        
+        // Exact Greenwich Time Signal (GTS): 5 shorts, 1 long exact on the top of the minute
+        if (m === 59 && s >= 55 && s <= 59 && lastPipSec !== s) {
+            lastPipSec = s;
+            playPip('short');
+        } else if (m === 0 && s === 0 && lastPipSec !== s) {
+            lastPipSec = s;
+            playPip('long');
+        } else if (s > 0 && s < 55) {
+            lastPipSec = -1; // Reset clean status
         }
     }
 
@@ -673,7 +718,8 @@
         isInitializing = true;
 
         try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            // Buffer de lectura pequeño habilitado en contexto
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive', sampleRate: 48000 });
             
             masterDest = audioCtx.createMediaStreamDestination();
             liveDest = audioCtx.createMediaStreamDestination();
@@ -708,20 +754,30 @@
             eqMidNode.connect(eqTrebleNode);
             eqTrebleNode.connect(bwFilterNode);
 
-            /* AQUÍ ESTÁ LA MONITORIZACIÓN: 
-               La salida procesada y limitada del máster se envía directamente 
-               a los altavoces / auriculares (audioCtx.destination). Todo efecto entra aquí. */
+            /* LA MONITORIZACIÓN DEFINITIVA:
+               Se manda el audio FINAL al audífono general del locutor
+               Esto asegura que todos los efectos de broadcast afecten la escucha */
             limiter.connect(audioCtx.destination); 
             limiter.connect(masterDest);           
             limiter.connect(liveGain);             
             liveGain.connect(liveDest);
 
-            // --- MICRÓFONO ---
-            const stream1 = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false, sampleRate: 48000 } });
+            // --- MICRÓFONO NATIVO PURO ---
+            // Apagamos todas las falsas ayudas automáticas web para audio broadcast 100% puro
+            const stream1 = await navigator.mediaDevices.getUserMedia({ 
+                audio: { 
+                    echoCancellation: false, 
+                    noiseSuppression: false, 
+                    autoGainControl: false, 
+                    sampleRate: 48000,
+                    latency: { ideal: 0.01 },
+                    channelCount: 2
+                } 
+            });
             const mSrc1 = audioCtx.createMediaStreamSource(stream1);
             
             mic1Trim = audioCtx.createGain(); mic1Trim.gain.value = 1;
-            mic1Gain = audioCtx.createGain(); mic1Gain.gain.value = 0.8; // INICIA CON VOLUMEN ALTO
+            mic1Gain = audioCtx.createGain(); mic1Gain.gain.value = 0.8;
             mic1PFL = audioCtx.createGain(); mic1PFL.gain.value = 0;
             mic1Comp = audioCtx.createDynamicsCompressor();
             mic1Comp.threshold.value = -18; mic1Comp.ratio.value = 3;
@@ -758,14 +814,14 @@
             anMaster = audioCtx.createAnalyser(); limiter.connect(anMaster);
 
             analyzer = audioCtx.createAnalyser();
-            limiter.connect(analyzer); // Visualiza el audio POST efectos
+            limiter.connect(analyzer); // Visualiza el audio POST efectos en gráfico inferior
 
             isInit = true; isInitializing = false;
             updateMatrix(); updateTrims(); updateGains(); visualize(); processDucking();
 
         } catch (error) {
             isInitializing = false;
-            alert("⚠️ FALLO CRÍTICO: Asegúrate de permitir el micrófono.");
+            alert("⚠️ FALLO CRÍTICO: Asegúrate de permitir el micrófono y dar los permisos web correctos.");
         }
     }
 
