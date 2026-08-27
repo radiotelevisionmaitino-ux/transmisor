@@ -1,7 +1,7 @@
 
 <!DOCTYPE html><html lang="es"><head>
     <meta charset="UTF-8">
-    <title>RADIO MAITINO ESTUDIO 1 | TRANSMISOR Y GRABADOR PRINCIPAL</title>
+    <title>MAITINO STUDIO | TRANSMISOR DE EMERGENCIA Y BROADCAST</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -816,12 +816,107 @@
             analyzer = audioCtx.createAnalyser();
             limiter.connect(analyzer); // Visualiza el audio POST efectos en gráfico inferior
 
-            isInit = true; isInitializing = false;
-            updateMatrix(); updateTrims(); updateGains(); visualize(); processDucking();
+            // --- REDUNDANCIA PEERJS (Privado + Público) ---
+            const peerConfig = { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] };
+            // Servidor Privado Render
+            peerPrivate = new Peer('maitino-studio-host-v2', { host: 'maitino-peer-server.onrender.com', port: 443, secure: true, config: peerConfig });
+            // Servidor Público Respaldo
+            peerPublic = new Peer('maitino-studio-host-public-v2', { config: peerConfig });
+
+            function setupPeerListeners(p) {
+                p.on('connection', conn => {
+                    // Ahora guardamos el proveedor (p) para saber quién debe devolver la llamada
+                    activeDataConns[conn.peer] = { conn: conn, provider: p };
+                    conn.on('data', data => {
+                        if(data.command === 'check_live' && isBroadcasting && !activeListenerCalls[conn.peer]) {
+                            iniciarLlamadaOyente(p, conn.peer);
+                        }
+                    });
+                    conn.on('close', () => { delete activeDataConns[conn.peer]; });
+                });
+                
+                p.on('call', async call => {
+                    await ensureAudioContext(); // Forzar activación del motor de audio por si entra móvil
+                    call.answer(masterDest.stream);
+                    call.on('stream', s => {
+                        let idx = 1;
+                        for(; idx<=4; idx++) if(!document.getElementById(`remote-audio-${idx}`).srcObject) break;
+                        if(idx <= 4) {
+                            peerIds[idx] = call.peer;
+                            document.getElementById(`remote-audio-${idx}`).srcObject = s;
+                            audioCtx.createMediaStreamSource(s).connect(movGains[idx]);
+                            const statId = `m${idx}-stat`;
+                            if(document.getElementById(statId)) { document.getElementById(statId).innerHTML = "● ONLINE"; document.getElementById(statId).style.color = "#00ffaa"; }
+                        }
+                    });
+                });
+            }
+            
+            setupPeerListeners(peerPrivate);
+            setupPeerListeners(peerPublic);
+
+            isInit = true;
+            isInitializing = false;
+            updateMatrix(); updateGains(); visualize(); processDucking();
 
         } catch (error) {
             isInitializing = false;
-            alert("⚠️ FALLO CRÍTICO: Asegúrate de permitir el micrófono y dar los permisos web correctos.");
+            alert("⚠️ FALLO CRÍTICO: Asegúrate de permitir el micrófono.");
+        }
+    }
+
+    function iniciarLlamadaOyente(provider, peerId) {
+        if(!isInit || !liveDest) return;
+        
+        let call = provider.call(peerId, liveDest.stream);
+        activeListenerCalls[peerId] = call;
+        
+        let requestedBitrate = parseInt(document.getElementById('mx-bitrate').value) * 1000;
+
+        if (call.peerConnection) {
+            call.peerConnection.addEventListener('signalingstatechange', () => {
+                if (call.peerConnection.signalingState === 'stable') {
+                    call.peerConnection.getSenders().forEach(sender => {
+                        if(sender.track && sender.track.kind === 'audio') {
+                            const params = sender.getParameters();
+                            if (!params.encodings) params.encodings = [{}];
+                            params.encodings[0].maxBitrate = requestedBitrate;
+                            params.encodings[0].networkPriority = 'high';
+                            sender.setParameters(params).catch(e => {});
+                        }
+                    });
+                }
+            });
+        }
+
+        call.on('iceStateChanged', (state) => {
+            if(state === 'connected' || state === 'completed') updateLiveBitrate();
+        });
+        
+        call.on('close', () => {
+            delete activeListenerCalls[peerId];
+        });
+        call.on('error', () => {
+            delete activeListenerCalls[peerId];
+        });
+    }
+
+    // Actualiza el bitrate de las llamadas activas en tiempo real
+    function updateLiveBitrate() {
+        let requestedBitrate = parseInt(document.getElementById('mx-bitrate').value) * 1000;
+        for (let peerId in activeListenerCalls) {
+            let call = activeListenerCalls[peerId];
+            if (call && call.peerConnection) {
+                call.peerConnection.getSenders().forEach(sender => {
+                    if(sender.track && sender.track.kind === 'audio') {
+                        const params = sender.getParameters();
+                        if (!params.encodings) params.encodings = [{}];
+                        params.encodings[0].maxBitrate = requestedBitrate;
+                        params.encodings[0].networkPriority = 'high';
+                        sender.setParameters(params).catch(e => {});
+                    }
+                });
+            }
         }
     }
 
@@ -944,11 +1039,6 @@
         }
         wobbleGain.connect(limiter);
     }
-    
-    function updateLiveBitrate() {
-        let bps = parseInt(document.getElementById('mx-bitrate').value) * 1000;
-        console.log("Forzando ancho de banda de red Webrtc a: " + bps + " bps");
-    }
 
     // --- CARGA DE ARCHIVOS Y URL EN DIRECTO ---
     async function loadD(id, input) { 
@@ -1070,15 +1160,34 @@
         await init(); if(!isInit) return; 
         const b = document.getElementById('b-live');
         const neon = document.getElementById('neon-live');
+        
         if(!isBroadcasting) {
             isBroadcasting = true; liveGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 1);
             b.innerText = "● EN EL AIRE"; b.style.background = "red"; startTimes.live = Date.now();
             neon.classList.add('on-air');
             intervals.live = setInterval(() => document.getElementById('t-live').innerText = `📡 Antena: ${formatTimeNoMs(Date.now() - startTimes.live)}`, 1000); 
+            
+            // Re-enviar señal a oyentes esperando
+            for(let peerId in activeDataConns) {
+                if(!activeListenerCalls[peerId]) {
+                    let provider = activeDataConns[peerId].provider;
+                    // FIX: Usar la función centralizada para garantizar eventos de Bitrate y limpieza
+                    iniciarLlamadaOyente(provider, peerId);
+                }
+            }
         } else {
             isBroadcasting = false; liveGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
             setTimeout(() => { b.innerText = "CONECTAR ANTENA"; b.style.background = "#00e676"; neon.classList.remove('on-air'); }, 1000);
             clearInterval(intervals.live); document.getElementById('t-live').innerText = "📡 Antena: 00:00:00";
+            
+            // FIX: Cortar la transmisión a oyentes al apagar antena (evita streaming fantasma)
+            for(let peerId in activeListenerCalls) {
+                // Se respetan las conexiones de los 4 canales móviles (peerIds), solo se tira a los oyentes
+                if(!peerIds.includes(peerId)) {
+                    if(activeListenerCalls[peerId]) activeListenerCalls[peerId].close();
+                    delete activeListenerCalls[peerId];
+                }
+            }
         }
     }
 
@@ -1172,6 +1281,18 @@
         }; 
         frame();
     }
+
+    // Heartbeat Activo Fuerte para que no se caiga la emisión (Cada 2 segundos)
+    setInterval(() => {
+        if (isBroadcasting) {
+            for (let peerId in activeDataConns) {
+                let connInfo = activeDataConns[peerId];
+                if (connInfo && connInfo.conn && connInfo.conn.open) {
+                    connInfo.conn.send({ command: 'heartbeat', status: 'estoy_aqui', timestamp: Date.now() });
+                }
+            }
+        }
+    }, 2000);
 </script>
 </body>
 </html>
