@@ -2,214 +2,1341 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sintonizador Maitino</title>
+    <title>RADIO MAITINO ESTUDIO 1 | TRANSMISOR Y GRABADOR PRINCIPAL</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { 
-            background: #050508; 
-            color: #fff; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden; 
+        :root { --bg: #030305; --panel: #121216; --accent: #00ffaa; --danger: #ff1a1a; --border: rgba(255,255,255,0.1); --ducking: #e91e63; --warning: #ffb300; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; width: 100%; box-sizing: border-box;}
+        
+        /* --- TITULO PRINCIPAL --- */
+        .main-title-container { text-align: center; margin-bottom: 10px; }
+        .main-title-container h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: 3px; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .main-title-container h2 { margin: 0; font-size: 0.75rem; font-weight: 300; letter-spacing: 5px; color: var(--accent); text-transform: uppercase; }
+        .date-time-display { margin-top: 8px; font-size: 1.1rem; color: #ccc; letter-spacing: 1px; font-weight: 500; text-transform: capitalize; }
+        
+        /* Estilo para la nueva hora local */
+        .local-time-large {
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
         }
-        #status { 
-            margin-bottom: 25px; 
-            font-size: 1.1rem; 
-            color: #888; 
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: 0.3s;
-        }
-        .btn-play { 
-            background: #00ffaa; 
-            color: #000; 
-            border: none; 
-            padding: 18px 45px; 
-            font-size: 1.2rem; 
-            font-weight: 900; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            letter-spacing: 1px;
-            box-shadow: 0 0 15px rgba(0, 255, 170, 0.2);
-        }
-        .btn-play:hover { 
-            background: #00e699; 
-            box-shadow: 0 0 25px rgba(0, 255, 170, 0.6); 
-            transform: scale(1.05);
-        }
-        .btn-play:disabled { 
-            background: #333; 
-            color: #666; 
-            cursor: not-allowed; 
-            box-shadow: none; 
-            transform: none;
-        }
-        .on-air { 
-            color: #ff1a1a !important; 
-            font-weight: bold; 
-            text-shadow: 0 0 15px rgba(255, 26, 26, 0.8); 
-        }
-        audio { display: none; } /* Ocultamos el reproductor feo por defecto */
+
+        /* --- ESTILO RELOJES Y CRONÓMETROS --- */
+        .header-container { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1700px; margin-bottom: 15px; padding: 8px 15px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid var(--border); position: relative; }
+        .clock-section { display: flex; flex-direction: column; }
+        
+        .date-display { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: #888; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 2px; font-weight: 300; }
+        .clock-display { font-family: 'Inter', sans-serif; font-size: 3rem; color: #fff; font-weight: 200; margin: 0; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .utc-badge { font-size: 1rem; color: var(--accent); margin-left: 8px; font-weight: 600; }
+        
+        /* NEON LIVE ANCHO PANORÁMICO */
+        .neon-live { font-size: 2.2rem; font-weight: 900; color: #333; text-shadow: none; border: 3px solid #333; padding: 6px 45px; border-radius: 8px; transition: 0.3s; opacity: 0.5; letter-spacing: 12px; text-align: center; }
+        .neon-live.on-air { color: #ff0000; border-color: #ff0000; text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; opacity: 1; box-shadow: inset 0 0 15px rgba(255,0,0,0.5); }
+
+        .sw-controls { display: flex; gap: 8px; margin-top: 8px; align-items: center; justify-content: flex-end; }
+        .sw-btn { background: #1c1c20; border: 1px solid var(--border); color: #00ffaa; padding: 4px 12px; border-radius: 5px; cursor: pointer; transition: 0.2s; font-size: 0.85rem;}
+        .sw-btn:hover { background: #333; }
+        .cd-input { background: transparent; border: none; color: var(--warning); width: 25px; text-align: center; font-family: 'Inter', sans-serif; font-size: 1rem; border-bottom: 1px solid #555; outline: none; }
+
+        /* --- MESA PRINCIPAL Y LAYOUT --- */
+        .master-grid { display: grid; grid-template-columns: 1fr 300px; gap: 15px; width: 100%; max-width: 1700px; }
+        .left-column { display: flex; flex-direction: column; gap: 15px; }
+        
+        .mixer { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; background: var(--panel); padding: 15px; border-radius: 15px; border: 1px solid var(--border); position: relative;}
+        .strip { background: rgba(0,0,0,0.4); padding: 12px 8px; border-radius: 12px; border: 1px solid var(--border); text-align: center; display: flex; flex-direction: column; }
+        
+        .trim-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 8px; }
+        .trim-container span { font-size: 0.55rem; color: #aaa; margin-bottom: 2px; }
+        .trim-knob { width: 80%; height: 4px; accent-color: #aaa; }
+        
+        .btn-pfl { background: #222; border: 1px solid #444; color: #888; font-size: 0.6rem; padding: 4px; border-radius: 4px; cursor: pointer; margin-bottom: 8px; width: 100%; }
+        .btn-pfl.active { background: var(--warning); color: #000; border-color: var(--warning); box-shadow: 0 0 5px var(--warning); font-weight: bold; }
+
+        .fader-group { display: flex; justify-content: center; gap: 10px; height: 160px; margin: 10px 0; }
+        .vu-meter { width: 8px; height: 100%; background: #050505; border-radius: 4px; border: 1px solid #222; }
+        .fader { -webkit-appearance: slider-vertical; width: 25px; height: 100%; margin: 0; cursor: pointer; }
+        
+        .seek-bar { width: 100%; height: 5px; margin-top: 8px; cursor: pointer; accent-color: var(--accent); }
+        .btn { background: #1c1c20; color: #fff; border: 1px solid var(--border); padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.85rem; }
+        
+        /* Botones de estado y LOOP en ROJO */
+        .btn-loop.active { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; box-shadow: 0 0 8px rgba(255,26,26,0.6) !important; }
+
+        .btn-state { background: #333; color: #888; border: 1px solid #555; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem; transition: 0.3s; margin-top: 5px; }
+        .btn-state.active { background: #00e676; color: #000; border-color: #00e676; box-shadow: 0 0 10px rgba(0,230,118,0.5); }
+        .btn-state.off { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+        .btn-duck { background: #333; color: #888; margin-top: 8px; font-size: 0.65rem; border: 1px dashed #555; padding: 4px; }
+        .btn-duck.active { background: var(--ducking); color: white; border-style: solid; }
+        .btn-live { background: #00e676; color: #000; height: 50px; font-size: 1rem; width: 100%; margin-top: 5px; transition: 0.3s; }
+        
+        /* Botón Iniciar Sistema Privado */
+        .btn-init-system { background: #444; color: #fff; height: 40px; font-size: 0.85rem; width: 100%; margin-top: 5px; transition: 0.3s; border-radius: 6px; cursor: pointer; border: 1px solid #555;}
+        .btn-init-system:hover { background: #555; }
+        .btn-init-system.active { background: #2196f3; border-color: #2196f3; color: #fff; box-shadow: 0 0 10px rgba(33,150,243,0.5); }
+        
+        .crossfader-container { grid-column: 6 / 8; background: #0a0a0d; border-radius: 8px; padding: 8px; border: 1px solid #222; display: flex; align-items: center; justify-content: space-between; margin-top: -5px; }
+        .crossfader-container span { font-size: 0.6rem; color: #888; font-weight: bold; }
+        .cf-slider { width: 100%; margin: 0 10px; accent-color: #00b3ff; }
+
+        h3 { font-size: 0.7rem; text-transform: uppercase; color: #888; margin: 0; }
+        
+        /* Etiqueta editable para móviles y decks */
+        .mov-name-input { background: transparent; border: none; border-bottom: 1px dashed #333; color: var(--accent); font-size: 0.6rem; text-align: center; width: 90%; margin: 4px 0 6px 0; outline: none; font-family: 'Inter', sans-serif; text-transform: uppercase; transition: 0.3s; }
+        .mov-name-input:focus { border-bottom-color: var(--accent); }
+
+        .timers { font-family: 'Inter', sans-serif; font-size: 0.9rem; text-align: left; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px; margin-top: 10px; letter-spacing: 1px;}
+        .t-row { margin: 6px 0; color: #888; font-weight: bold; }
+        .t-row.active { color: var(--danger); }
+        .t-row.live-active { color: #00e676; }
+        .deck-timer-container { display: flex; justify-content: space-between; font-size: 0.75rem; font-family: 'Inter', sans-serif; color: var(--accent); margin-top: 8px; padding: 0 4px; font-weight: bold;}
+
+        /* --- PANELES INFERIORES --- */
+        .bottom-panels { display: grid; grid-template-columns: 320px 1fr; gap: 15px; width: 100%; }
+        .sub-panel { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sub-panel h3 { margin-bottom: 12px; color: var(--accent); font-size: 0.85rem; border-bottom: 1px solid #333; padding-bottom: 6px; }
+        
+        .playlist-upload-btn { background: #2a2a30; border: 1px dashed var(--border); color: #888; padding: 8px; text-align: center; border-radius: 6px; cursor: pointer; font-size: 0.75rem; flex: 1; }
+        .playlist-upload-btn:hover { border-color: var(--accent); color: #fff; }
+        .playlist-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 200px; border-radius: 5px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); flex: 1; }
+        .playlist-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid #222; font-size: 0.7rem; color: #ccc; }
+        .playlist-item.playing { background: rgba(0, 255, 170, 0.1); border-left: 2px solid var(--accent); }
+        .pl-actions button { background: #333; color: white; border: none; padding: 3px 6px; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 4px; font-size: 0.65rem;}
+        .pl-actions button:hover { background: var(--accent); color: black; }
+        .auto-queue-info { font-size: 0.65rem; color: var(--warning); margin-top: 5px; display: flex; justify-content: space-between; }
+        
+        .config-input { width: calc(100% - 16px); background: #000; border: 1px solid var(--border); color: #00ffaa; padding: 8px; border-radius: 4px; font-family: 'Inter', sans-serif; margin-bottom: 8px; font-size: 0.8rem;}
+        .notes-area { flex: 1; width: calc(100% - 16px); min-height: 120px; background: #050508; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 4px; resize: vertical; font-family: 'Inter', sans-serif; font-size: 0.85rem; line-height: 1.4; }
+        
+        /* --- MATRIZ DE PROCESAMIENTO --- */
+        .matrix-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+        .matrix-row { display: flex; flex-direction: column; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid #222; }
+        .matrix-row label { font-size: 0.65rem; color: #aaa; margin-bottom: 4px; text-transform: uppercase; font-weight: bold; }
+        .matrix-row select, .matrix-row input[type="range"] { width: 100%; background: #111; color: #fff; border: 1px solid #333; padding: 6px; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.75rem;}
+        .matrix-slider-group { display: flex; align-items: center; gap: 8px; }
+        .matrix-val { font-size: 0.65rem; color: var(--accent); width: 35px; text-align: right; }
     </style>
 </head>
 <body>
 
-    <div id="status">LISTO PARA CONECTAR</div>
-    <button id="btn-connect" class="btn-play">SINTONIZAR RADIO</button>
+<div class="main-title-container">
+    <h1>Radio Maitino</h1>
+    <h2>Estudio de transmisión y grabación principal</h2>
+    <div class="date-time-display">
+        <div id="main-date-local">CARGANDO FECHA...</div>
+        <div class="local-time-large" id="local-time">00:00:00</div>
+    </div>
+</div>
+
+<div class="header-container">
+    <!-- IZQUIERDA: HORA UTC Y CLIMA ELCHE -->
+    <div class="clock-section" style="flex: 1; flex-direction: row; align-items: center; gap: 20px;">
+        <div>
+            <div class="date-display">TIEMPO UNIVERSAL</div>
+            <div class="clock-display">
+                <span id="utc-time">00:00</span>
+                <span class="utc-badge">UTC</span>
+            </div>
+        </div>
+        <div style="border-left: 1px solid #333; padding-left: 20px; display: flex; flex-direction: column; justify-content: center;">
+            <div class="date-display">ELCHE, ESP</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 1.4rem; font-weight: 700; color: var(--accent); font-family: 'Inter', sans-serif;">
+                <i class="fas fa-circle-notch fa-spin" id="wx-icon"></i> <span id="wx-temp">--°C</span>
+            </div>
+            <div id="wx-desc" style="font-size: 0.7rem; color: #888; text-transform: uppercase; margin-top: 2px;">Conectando...</div>
+        </div>
+    </div>
     
-    <!-- Reproductor nativo oculto -->
-    <audio id="player" playsinline></audio>
+    <!-- CENTRO: NEON LIVE -->
+    <div class="clock-section" style="flex: 1; align-items: center; justify-content: center;">
+        <div id="neon-live" class="neon-live">LIVE</div>
+    </div>
+    
+    <!-- DERECHA: CRONÓMETROS -->
+    <div class="clock-section" style="flex: 1; flex-direction: row; align-items: center; justify-content: flex-end; gap: 40px; padding-right: 15px;">
+        
+        <!-- TEMPORIZADOR -->
+        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+            <div class="date-display">TEMPORIZADOR</div>
+            <div class="clock-display" style="font-size: 2rem;" id="stopwatch">00:00:00.00</div>
+            <div class="sw-controls">
+                <button class="sw-btn" onclick="startSw()"><i class="fas fa-play"></i></button>
+                <button class="sw-btn" onclick="pauseSw()"><i class="fas fa-pause"></i></button>
+                <button class="sw-btn" onclick="resetSw()"><i class="fas fa-stop"></i></button>
+            </div>
+        </div>
+        
+        <!-- CUENTA ATRÁS -->
+        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+            <div class="date-display">CUENTA ATRÁS</div>
+            <div class="clock-display" style="font-size: 2rem; color: var(--warning);" id="countdown">00:00:00</div>
+            <div class="sw-controls">
+                <input type="text" id="cd-hrs" class="cd-input" value="00" maxlength="2">:
+                <input type="text" id="cd-min" class="cd-input" value="05" maxlength="2">:
+                <input type="text" id="cd-sec" class="cd-input" value="00" maxlength="2">
+                <button class="sw-btn" style="color: var(--warning);" onclick="startCd()"><i class="fas fa-play"></i></button>
+                <button class="sw-btn" style="color: var(--warning);" onclick="resetCd()"><i class="fas fa-undo"></i></button>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<div class="master-grid">
+    <div class="left-column">
+        <!-- MESA PRINCIPAL (8 Canales) -->
+        <div class="mixer">
+            <!-- MICRÓFONO GENERAL ÚNICO -->
+            <div class="strip">
+                <h3>Micrófono</h3>
+                <div style="height: 17px;"></div>
+                <div class="trim-container">
+                    <span>TRIM</span>
+                    <input type="range" id="trim-mic1" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
+                </div>
+                <button class="btn-pfl" id="pfl-mic1" onclick="togglePFL('mic1')">CUE</button>
+                <div class="fader-group">
+                    <canvas class="vu-meter" id="vu-mic1" width="10" height="150"></canvas>
+                    <input type="range" id="v-mic1" class="fader" min="0" max="2" step="0.01" value="0.8" oninput="updateGains()">
+                </div>
+                <button class="btn-state active" id="b-mic1" onclick="toggleMic()">ON AIR</button>
+                <button class="btn-duck" id="b-duck1" onclick="toggleDucking()">DUCKING OFF</button>
+            </div>
+
+            <!-- MOVIL 1 -->
+            <div class="strip">
+                <h3>Móvil 1</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
+                <div id="m1-stat" style="font-size: 0.55rem; color: gray;">OFFLINE</div>
+                <div class="trim-container">
+                    <span>TRIM</span>
+                    <input type="range" id="trim-mov1" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
+                </div>
+                <button class="btn-pfl" id="pfl-mov1" onclick="togglePFL('mov1')">CUE</button>
+                <div class="fader-group">
+                    <canvas class="vu-meter" id="vu-mov1" width="10" height="150"></canvas>
+                    <input type="range" id="v-mov1" class="fader" min="0" max="1.5" step="0.01" value="0.8" oninput="updateGains()">
+                </div>
+                <button class="btn-state active" id="b-mov1" onclick="toggleMov(1)">ON AIR</button>
+                <audio id="remote-audio-1" autoplay hidden muted></audio>
+            </div>
+
+            <!-- MOVIL 2 -->
+            <div class="strip">
+                <h3>Móvil 2</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
+                <div id="m2-stat" style="font-size: 0.55rem; color: gray;">OFFLINE</div>
+                <div class="trim-container">
+                    <span>TRIM</span>
+                    <input type="range" id="trim-mov2" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
+                </div>
+                <button class="btn-pfl" id="pfl-mov2" onclick="togglePFL('mov2')">CUE</button>
+                <div class="fader-group">
+                    <canvas class="vu-meter" id="vu-mov2" width="10" height="150"></canvas>
+                    <input type="range" id="v-mov2" class="fader" min="0" max="1.5" step="0.01" value="0.8" oninput="updateGains()">
+                </div>
+                <button class="btn-state active" id="b-mov2" onclick="toggleMov(2)">ON AIR</button>
+                <audio id="remote-audio-2" autoplay hidden muted></audio>
+            </div>
+
+            <!-- MOVIL 3 -->
+            <div class="strip">
+                <h3>Móvil 3</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
+                <div id="m3-stat" style="font-size: 0.55rem; color: gray;">OFFLINE</div>
+                <div class="trim-container">
+                    <span>TRIM</span>
+                    <input type="range" id="trim-mov3" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
+                </div>
+                <button class="btn-pfl" id="pfl-mov3" onclick="togglePFL('mov3')">CUE</button>
+                <div class="fader-group">
+                    <canvas class="vu-meter" id="vu-mov3" width="10" height="150"></canvas>
+                    <input type="range" id="v-mov3" class="fader" min="0" max="1.5" step="0.01" value="0.8" oninput="updateGains()">
+                </div>
+                <button class="btn-state active" id="b-mov3" onclick="toggleMov(3)">ON AIR</button>
+                <audio id="remote-audio-3" autoplay hidden muted></audio>
+            </div>
+
+            <!-- MOVIL 4 -->
+            <div class="strip">
+                <h3>Móvil 4</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
+                <div id="m4-stat" style="font-size: 0.55rem; color: gray;">OFFLINE</div>
+                <div class="trim-container">
+                    <span>TRIM</span>
+                    <input type="range" id="trim-mov4" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
+                </div>
+                <button class="btn-pfl" id="pfl-mov4" onclick="togglePFL('mov4')">CUE</button>
+                <div class="fader-group">
+                    <canvas class="vu-meter" id="vu-mov4" width="10" height="150"></canvas>
+                    <input type="range" id="v-mov4" class="fader" min="0" max="1.5" step="0.01" value="0.8" oninput="updateGains()">
+                </div>
+                <button class="btn-state active" id="b-mov4" onclick="toggleMov(4)">ON AIR</button>
+                <audio id="remote-audio-4" autoplay hidden muted></audio>
+            </div>
+
+            <!-- DECK A -->
+            <div class="strip" style="border-color: #00b3ff;">
+                <h3>Deck A</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
+                <div class="trim-container">
+                    <span>TRIM</span>
+                    <input type="range" id="trim-da" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
+                </div>
+                <button class="btn-pfl" id="pfl-da" onclick="togglePFL('da')">CUE</button>
+                <div class="fader-group">
+                    <canvas class="vu-meter" id="vu-da" width="10" height="150"></canvas>
+                    <input type="range" id="v-da" class="fader" min="0" max="1" step="0.01" value="0.8" oninput="updateGains()">
+                </div>
+                
+                <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                    <button class="btn" onclick="document.getElementById('fA').click()" style="flex: 1; padding: 4px; font-size: 0.65rem;"><i class="fas fa-folder-open"></i> ARCHIVO</button>
+                    <input type="file" id="fA" hidden onchange="loadD('A',this)">
+                </div>
+                <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                    <input type="url" id="url-live-A" class="config-input" placeholder="URL Directo..." style="font-size: 0.6rem; padding: 4px; margin: 0; flex: 1;">
+                    <button class="btn" onclick="loadUrl('A', 'live')" style="padding: 4px 8px; color: var(--danger);"><i class="fas fa-satellite-dish"></i></button>
+                </div>
+                <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                    <input type="url" id="url-vod-A" class="config-input" placeholder="URL Diferido (Seekable)..." style="font-size: 0.6rem; padding: 4px; margin: 0; flex: 1;">
+                    <button class="btn" onclick="loadUrl('A', 'vod')" style="padding: 4px 8px; color: var(--accent);"><i class="fas fa-link"></i></button>
+                </div>
+                
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn" id="pA" onclick="playDeck('A')" style="flex: 1; padding: 6px;"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-loop active" id="lA" onclick="toggleLoop('A')" style="flex: 1; padding: 6px;"><i class="fas fa-repeat"></i></button>
+                </div>
+                <div class="deck-timer-container"><span id="time-curr-A">00:00:00</span><span id="time-tot-A">00:00:00</span></div>
+                <input type="range" class="seek-bar" id="seek-A" min="0" max="100" value="0" step="0.1" oninput="seekDeck('A')">
+                <audio id="audA" crossorigin="anonymous" loop></audio>
+            </div>
+
+            <!-- DECK B -->
+            <div class="strip" style="border-color: #00b3ff;">
+                <h3>Deck B</h3>
+                <input type="text" class="mov-name-input" placeholder="Nombre...">
+                <div class="trim-container">
+                    <span>TRIM</span>
+                    <input type="range" id="trim-db" class="trim-knob" min="0" max="2" step="0.05" value="1" oninput="updateTrims()">
+                </div>
+                <button class="btn-pfl" id="pfl-db" onclick="togglePFL('db')">CUE</button>
+                <div class="fader-group">
+                    <canvas class="vu-meter" id="vu-db" width="10" height="150"></canvas>
+                    <input type="range" id="v-db" class="fader" min="0" max="1" step="0.01" value="0.8" oninput="updateGains()">
+                </div>
+                
+                <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                    <button class="btn" onclick="document.getElementById('fB').click()" style="flex: 1; padding: 4px; font-size: 0.65rem;"><i class="fas fa-folder-open"></i> ARCHIVO</button>
+                    <input type="file" id="fB" hidden onchange="loadD('B',this)">
+                </div>
+                <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                    <input type="url" id="url-live-B" class="config-input" placeholder="URL Directo..." style="font-size: 0.6rem; padding: 4px; margin: 0; flex: 1;">
+                    <button class="btn" onclick="loadUrl('B', 'live')" style="padding: 4px 8px; color: var(--danger);"><i class="fas fa-satellite-dish"></i></button>
+                </div>
+                <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                    <input type="url" id="url-vod-B" class="config-input" placeholder="URL Diferido (Seekable)..." style="font-size: 0.6rem; padding: 4px; margin: 0; flex: 1;">
+                    <button class="btn" onclick="loadUrl('B', 'vod')" style="padding: 4px 8px; color: var(--accent);"><i class="fas fa-link"></i></button>
+                </div>
+
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn" id="pB" onclick="playDeck('B')" style="flex: 1; padding: 6px;"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-loop active" id="lB" onclick="toggleLoop('B')" style="flex: 1; padding: 6px;"><i class="fas fa-repeat"></i></button>
+                </div>
+                <div class="deck-timer-container"><span id="time-curr-B">00:00:00</span><span id="time-tot-B">00:00:00</span></div>
+                <input type="range" class="seek-bar" id="seek-B" min="0" max="100" value="0" step="0.1" oninput="seekDeck('B')">
+                <audio id="audB" crossorigin="anonymous" loop></audio>
+            </div>
+
+            <!-- MASTER Y VISUALIZADOR PRINCIPAL -->
+            <div class="strip" style="border-color: var(--accent); min-width: 140px;">
+                <h3>Master Out</h3>
+                <div style="font-size:0.55rem; margin-top:2px; margin-bottom:10px; color:var(--accent); font-weight:bold; letter-spacing:1px;">LIMITADOR ACTIVO<br>PROTECCIÓN 0dBFS</div>
+                
+                <canvas id="cv-master-large" width="120" height="50" style="width: 100%; height: 50px; background: #000; border-radius: 4px; border: 1px solid #222; margin-bottom: 10px;"></canvas>
+                
+                <div class="fader-group" style="height: 120px;">
+                    <canvas class="vu-meter" id="vu-mas" width="10" height="120"></canvas>
+                    <input type="range" id="v-mas" class="fader" min="0" max="1" step="0.01" value="0.9" oninput="updateGains()">
+                </div>
+            </div>
+            
+            <!-- CROSSFADER -->
+            <div class="crossfader-container">
+                <span>A</span>
+                <input type="range" id="cf-slider" class="cf-slider" min="0" max="100" value="50" oninput="updateGains()">
+                <span>B</span>
+            </div>
+        </div>
+
+        <!-- PANELES DE CONTROL INFERIORES -->
+        <div class="bottom-panels">
+            
+            <!-- 1. PLAYLIST RAPIDA -->
+            <div class="sub-panel">
+                <h3><i class="fas fa-list-ol"></i> Playlist Rápida</h3>
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <div class="playlist-upload-btn" onclick="document.getElementById('pl-upload').click()">
+                        <i class="fas fa-plus"></i> Añadir pistas
+                    </div>
+                    <button class="btn btn-duck" id="btn-autoplay" onclick="toggleAutoPlay()" style="margin-top: 0; flex: 1;">AUTO: OFF</button>
+                </div>
+                <input type="file" id="pl-upload" hidden multiple accept="audio/*" onchange="handlePlaylistUpload(this)">
+                <ul class="playlist-list" id="pl-list">
+                    <li style="padding:10px; color:#555; text-align:center; font-style:italic; font-size: 0.75rem;" id="pl-empty">Lista vacía</li>
+                </ul>
+                <div class="auto-queue-info">
+                    <span id="pl-upnext">Up next: --</span>
+                    <span id="pl-total">Duración: 00:00:00</span>
+                </div>
+            </div>
+
+            <!-- 2. MATRIZ DE PROCESAMIENTO -->
+            <div class="sub-panel">
+                <h3><i class="fas fa-sliders-h"></i> Controles de Calidad y Procesamiento</h3>
+                <div class="matrix-container">
+                    <div class="matrix-row">
+                        <label>Ancho de Banda</label>
+                        <select id="mx-bw" onchange="updateMatrix()">
+                            <option value="minimo">Banda Mínima Extrema (1 kHz)</option>
+                            <option value="morse">Impulsos Morse (800 Hz)</option>
+                            <option value="sub">Subtelefónico (500 - 1 kHz)</option>
+                            <option value="tel">Telefónico (300 Hz - 3.4 kHz)</option>
+                            <option value="am">Onda Media AM (9 kHz)</option>
+                            <option value="am-hq">Onda Media HQ (10 kHz)</option>
+                            <option value="fm">Calidad FM (15 kHz)</option>
+                            <option value="fm-hq">Calidad FM Alta (18 kHz)</option>
+                            <option value="uhd">Ultra HD (20 kHz)</option>
+                            <option value="super" selected>Super Ultra HD (Bypass)</option>
+                        </select>
+                    </div>
+                    <div class="matrix-row">
+                        <label>Modos de Salida</label>
+                        <select id="mx-out" onchange="updateMatrix()">
+                            <option value="mono">Mono Real (Mayor Alcance)</option>
+                            <option value="monosum">Mono Sumado</option>
+                            <option value="monol">Mono Izquierdo</option>
+                            <option value="monor">Mono Derecho</option>
+                            <option value="dualmono">Dual Mono Split</option>
+                            <option value="stereo" selected>Estéreo Real (2.0)</option>
+                            <option value="inv">Fase Hermetria / Invertida</option>
+                        </select>
+                    </div>
+                    <div class="matrix-row">
+                        <label>Fading de Oscilación</label>
+                        <select id="mx-wobble" onchange="updateMatrix()">
+                            <option value="0" selected>Señal Estable</option>
+                            <option value="0.2">Ligera Oscilación</option>
+                            <option value="0.5">Fading Notable</option>
+                            <option value="0.9">Inestabilidad Extrema</option>
+                        </select>
+                    </div>
+                    <div class="matrix-row">
+                        <label>Bitrate de Salida</label>
+                        <select id="mx-bitrate" onchange="updateLiveBitrate()">
+                            <option value="9">9 kbps</option>
+                            <option value="16">16 kbps</option>
+                            <option value="32">32 kbps</option>
+                            <option value="64">64 kbps</option>
+                            <option value="96">96 kbps</option>
+                            <option value="129" selected>129 kbps (Estándar)</option>
+                            <option value="256">256 kbps</option>
+                            <option value="512">512 kbps</option>
+                        </select>
+                    </div>
+                    
+                    <div class="matrix-row">
+                        <label>Ecualizador 3 Bandas</label>
+                        <div class="matrix-slider-group">
+                            <span style="font-size:0.55rem; color:#888; width: 25px;">LOW</span>
+                            <input type="range" id="mx-bass" min="-15" max="15" step="1" value="0" oninput="updateMatrix()">
+                            <span id="mx-bass-val" class="matrix-val">0dB</span>
+                        </div>
+                        <div class="matrix-slider-group" style="margin-top: 4px;">
+                            <span style="font-size:0.55rem; color:#888; width: 25px;">MID</span>
+                            <input type="range" id="mx-mid" min="-15" max="15" step="1" value="0" oninput="updateMatrix()">
+                            <span id="mx-mid-val" class="matrix-val">0dB</span>
+                        </div>
+                        <div class="matrix-slider-group" style="margin-top: 4px;">
+                            <span style="font-size:0.55rem; color:#888; width: 25px;">HIGH</span>
+                            <input type="range" id="mx-treble" min="-15" max="15" step="1" value="0" oninput="updateMatrix()">
+                            <span id="mx-treble-val" class="matrix-val">0dB</span>
+                        </div>
+                    </div>
+                    <div class="matrix-row">
+                        <label>Compresor / Limitador</label>
+                        <div class="matrix-slider-group">
+                            <span style="font-size:0.55rem; color:#888; width: 35px;">THRES</span>
+                            <input type="range" id="mx-lim-thres" min="-24" max="0" step="1" value="-2" oninput="updateMatrix()">
+                            <span id="mx-lim-thres-val" class="matrix-val">-2dB</span>
+                        </div>
+                        <div class="matrix-slider-group" style="margin-top: 4px;">
+                            <span style="font-size:0.55rem; color:#888; width: 35px;">RATIO</span>
+                            <input type="range" id="mx-lim-ratio" min="1" max="20" step="1" value="10" oninput="updateMatrix()">
+                            <span id="mx-lim-ratio-val" class="matrix-val">10:1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LATERAL: CONTROLES DE EMISIÓN -->
+    <div class="sidebar">
+        <div class="mixer" style="grid-template-columns: 1fr; gap: 8px;">
+            <h3>📡 Transmisión Redundante</h3>
+            <button class="btn btn-live" id="b-live" onclick="toggleLive()">CONECTAR ANTENA</button>
+            <button class="btn btn-init-system" id="btn-init-private" onclick="initPrivateServer()">INICIAR SISTEMA (SERVIDOR PRIVADO)</button>
+            <hr style="width:100%; border:0; border-top:1px solid #333; margin: 5px 0;">
+            
+            <h3>🔴 Grabación</h3>
+            <button class="btn" onclick="rec('master')" id="r-mas" style="padding:8px;">REC MÁSTER</button>
+            <button class="btn" onclick="rec('micmov')" id="r-micmov" style="margin-top:4px; padding:8px;">REC VOCES</button>
+            
+            <div class="timers">
+                <div id="t-live" class="t-row live-active">📡 Antena: 00:00:00</div>
+                <div id="t-master" class="t-row active">🔴 Máster: 00:00:00</div>
+                <div id="t-micmov" class="t-row active">🔴 Voz: 00:00:00</div>
+            </div>
+            
+            <hr style="width:100%; border:0; border-top:1px solid #333; margin: 10px 0;">
+            <h3><i class="fas fa-edit"></i> Notas de Emisión</h3>
+            <input type="text" id="rec-filename" class="config-input" placeholder="Nombre base grabación">
+            <textarea class="notes-area" placeholder="Escaleta, reportes, avisos de emergencia..."></textarea>
+
+            <hr style="width:100%; border:0; border-top:1px solid #333; margin: 10px 0;">
+            <h3>🔔 Utilidades</h3>
+            <button class="btn btn-duck active" id="b-pips" onclick="togglePips()" style="width:100%; font-size:0.75rem; padding:8px;">SEÑALES HORARIAS: ON</button>
+        </div>
+    </div>
+</div>
 
 <script>
-    const player = document.getElementById('player');
-    const statusText = document.getElementById('status');
-    const btnConnect = document.getElementById('btn-connect');
+    // Variables de audio
+    let audioCtx, masterGain, musicBus, duckingGain, liveGain, liveDest, analyzer, limiter;
+    let mic1Gain, mic1Comp, mic1Trim, mic1PFL;
+    let movGains = [], movTrims = [], movPFLs = [];
+    let dAGain, dBGain, dATrim, dBTrim, dAPFL, dBPFL;
+    let masterDest, micMovDest, pflDest;
     
-    const HOST_PRIVADO = 'maitino-studio-host-v2';
+    // Nodos de Matriz
+    let eqBassNode, eqMidNode, eqTrebleNode, bwFilterNode, outMerger, outSplitter;
+    let wobbleOsc, wobbleGain, wobbleDepth;
+
+    // Analizadores VU individuales
+    let anMic1, anDA, anDB, anMaster;
+    let anMov = [];
+
+    // Doble Conectividad PeerJS
+    let peerPrivate;
+    let isInit = false, isInitializing = false, isDucking = false, isBroadcasting = false;
+    let activeListenerCalls = {};
+    let activeDataConns = {};
+    let peerIds = [null, null, null, null, null];
+    let privateServerInit = false;
     
-    let peer;
-    let audioCtx;
-    let retryCount = 0;
-    let isConnecting = false;
-    let currentCall = null;
-    let keepAliveInterval = null;
+    // Estados lógicos de canales (Inician ABIERTOS / ON AIR por defecto)
+    let mMicMuted = false;
+    let mMuted = [false, false, false, false, false]; 
+    let pflActive = { mic1: false, mov1: false, mov2: false, mov3: false, mov4: false, da: false, db: false };
 
-    // Requiere interacción humana para saltarse el bloqueo de autoplay
-    btnConnect.addEventListener('click', iniciarSintonizador);
+    // Grabación / Timers
+    let recorders = {}, chunks = {master:[], micmov:[]};
+    let startTimes = { live: 0, master: 0, micmov: 0 };
+    let intervals = { live: null, master: null, micmov: null };
 
-    async function iniciarSintonizador() {
-        if (isConnecting) return;
-        isConnecting = true;
-        
-        btnConnect.disabled = true;
-        btnConnect.innerText = "CONECTANDO...";
-        statusText.innerText = "Iniciando motor de audio...";
+    // Cronómetros
+    let swInterval = null, swStartTime = 0, swElapsedTime = 0;
+    let cdInterval = null, cdTimeLeft = 0;
+    
+    // Playlist y AutoDJ
+    let isAutoPlay = false, playlistFilesArray = [], currentAutoIndex = -1, deckModes = { A: 'file', B: 'file' };
+    let crossfadingInProgress = false;
+    
+    // Pips (GTS)
+    let pipsEnabled = true, lastPipSec = -1;
 
-        // 1. Crear / reanudar contexto de audio validado por el usuario
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // API Open-Meteo para Elche
+    async function fetchWeather() {
+        try {
+            // Coordenadas de Elche (Aprox: 38.2669, -0.6984)
+            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.2669&longitude=-0.6984&current_weather=true');
+            const data = await res.json();
+            const temp = Math.round(data.current_weather.temperature);
+            const code = data.current_weather.weathercode;
+            
+            document.getElementById('wx-temp').innerText = temp + '°C';
+            
+            // Decodificar condición WMO (Simplificada)
+            let desc = 'Despejado'; let icon = 'fa-sun';
+            if (code >= 1 && code <= 3) { desc = 'P. Nublado'; icon = 'fa-cloud-sun'; }
+            else if (code >= 45 && code <= 48) { desc = 'Niebla'; icon = 'fa-smog'; }
+            else if (code >= 51 && code <= 67) { desc = 'Llovizna'; icon = 'fa-cloud-rain'; }
+            else if (code >= 71 && code <= 82) { desc = 'Lluvia'; icon = 'fa-cloud-showers-heavy'; }
+            else if (code >= 95 && code <= 99) { desc = 'Tormenta'; icon = 'fa-bolt'; }
+            
+            document.getElementById('wx-desc').innerText = desc;
+            document.getElementById('wx-icon').className = 'fas ' + icon;
+        } catch (e) {
+            document.getElementById('wx-temp').innerText = 'N/A';
+            document.getElementById('wx-desc').innerText = 'Error red';
+            document.getElementById('wx-icon').className = 'fas fa-exclamation-triangle';
         }
-        if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-        }
+    }
+    // Cargar clima inicial y actualizar cada 15 mins
+    fetchWeather();
+    setInterval(fetchWeather, 900000);
 
-        conectarPeer();
+    // --- CRONÓMETROS ---
+    function formatSwMs(ms) {
+        let hrs = Math.floor(ms / 3600000);
+        let min = Math.floor((ms % 3600000) / 60000);
+        let sec = Math.floor((ms % 60000) / 1000);
+        let milli = Math.floor((ms % 1000) / 10); 
+        return `${String(hrs).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(milli).padStart(2, '0')}`;
+    }
+    
+    function startSw() {
+        if(!swInterval) {
+            swStartTime = Date.now() - swElapsedTime;
+            swInterval = setInterval(() => {
+                swElapsedTime = Date.now() - swStartTime;
+                document.getElementById('stopwatch').innerText = formatSwMs(swElapsedTime);
+            }, 30);
+        }
+    }
+    function pauseSw() { clearInterval(swInterval); swInterval = null; }
+    function resetSw() { pauseSw(); swElapsedTime = 0; document.getElementById('stopwatch').innerText = "00:00:00.00"; }
+
+    // CUENTA ATRÁS HORAS, MIN, SEC
+    function updateCdDisplay() {
+        let h = Math.floor(cdTimeLeft / 3600);
+        let m = Math.floor((cdTimeLeft % 3600) / 60);
+        let s = cdTimeLeft % 60;
+        document.getElementById('countdown').innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+    
+    function startCd() {
+        if(cdInterval) clearInterval(cdInterval);
+        let h = parseInt(document.getElementById('cd-hrs').value) || 0;
+        let m = parseInt(document.getElementById('cd-min').value) || 0;
+        let s = parseInt(document.getElementById('cd-sec').value) || 0;
+        cdTimeLeft = (h * 3600) + (m * 60) + s;
+        updateCdDisplay();
+        cdInterval = setInterval(() => {
+            if(cdTimeLeft > 0) {
+                cdTimeLeft--;
+                updateCdDisplay();
+            } else {
+                clearInterval(cdInterval);
+                cdInterval = null;
+                document.getElementById('countdown').innerText = "00:00:00";
+            }
+        }, 1000);
+    }
+    function resetCd() {
+        if(cdInterval) clearInterval(cdInterval);
+        cdInterval = null;
+        let h = parseInt(document.getElementById('cd-hrs').value) || 0;
+        let m = parseInt(document.getElementById('cd-min').value) || 0;
+        let s = parseInt(document.getElementById('cd-sec').value) || 0;
+        cdTimeLeft = (h * 3600) + (m * 60) + s;
+        updateCdDisplay();
     }
 
-    function conectarPeer() {
-        statusText.innerText = "Buscando servidor...";
+    // --- RELOJES PRINCIPALES Y PIPS GTS ---
+    function updateClocks() {
+        const now = new Date();
+        const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        let dateStr = new Intl.DateTimeFormat('es-ES', options).format(now);
+        document.getElementById('main-date-local').innerText = dateStr;
         
-        if (peer) {
-            peer.destroy();
+        const optsLocal = { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        document.getElementById('local-time').innerText = new Intl.DateTimeFormat('es-ES', optsLocal).format(now);
+        
+        const hUTC = String(now.getUTCHours()).padStart(2, '0');
+        const mUTC = String(now.getUTCMinutes()).padStart(2, '0');
+        document.getElementById('utc-time').innerText = `${hUTC}:${mUTC}`;
+        
+        checkPipsGTS(now);
+    }
+    // Comprobar reloj 5 veces por segundo para lanzar el audio de forma impecable sin desincronización
+    setInterval(updateClocks, 200);
+
+    function formatTimeNoMs(ms) {
+        if(ms < 0) ms = 0;
+        let hrs = Math.floor(ms / 3600000);
+        let min = Math.floor((ms % 3600000) / 60000);
+        let sec = Math.floor((ms % 60000) / 1000);
+        return `${String(hrs).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function togglePips() {
+        pipsEnabled = !pipsEnabled;
+        const b = document.getElementById('b-pips');
+        b.innerText = pipsEnabled ? "SEÑALES HORARIAS: ON" : "SEÑALES HORARIAS: OFF";
+        b.classList.toggle('active', pipsEnabled);
+    }
+
+    function playPip(type) {
+        if (!audioCtx || !pipsEnabled || audioCtx.state === 'suspended') return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = 1000; 
+        
+        // Conexión del PIP SOLO a la salida de monitoreo local (NO se emite, NO se graba)
+        osc.connect(gain); gain.connect(audioCtx.destination); 
+        
+        const now = audioCtx.currentTime;
+        // Volumen proporcional al fader master actual
+        let currentMasterVol = parseFloat(document.getElementById('v-mas').value) || 0.9;
+        let targetVol = 0.6 * currentMasterVol;
+
+        gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(targetVol, now + 0.01);
+        const duration = type === 'long' ? 0.5 : 0.1; 
+        gain.gain.setValueAtTime(targetVol, now + duration - 0.01); gain.gain.linearRampToValueAtTime(0, now + duration);
+        osc.start(now); osc.stop(now + duration);
+    }
+
+    function checkPipsGTS(now) {
+        if (!pipsEnabled || !audioCtx || audioCtx.state === 'suspended') return;
+        const m = now.getMinutes(), s = now.getSeconds();
+        
+        // Exact Greenwich Time Signal (GTS): 5 shorts, 1 long exact on the top of the minute
+        if (m === 59 && s >= 55 && s <= 59 && lastPipSec !== s) {
+            lastPipSec = s;
+            playPip('short');
+        } else if (m === 0 && s === 0 && lastPipSec !== s) {
+            lastPipSec = s;
+            playPip('long');
+        } else if (s > 0 && s < 55) {
+            lastPipSec = -1; // Reset clean status
         }
+    }
 
-        peer = new Peer({
-            host: 'maitino-peer-server.onrender.com',
-            port: 443,
-            secure: true,
-            config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] }
+    // FORMATO HORAS, MINUTOS, SEGUNDOS PARA DECKS
+    function formatMinSec(seconds) {
+        if (isNaN(seconds) || !isFinite(seconds)) return "00:00:00";
+        let h = Math.floor(seconds / 3600);
+        let m = Math.floor((seconds % 3600) / 60);
+        let s = Math.floor(seconds % 60);
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // --- EVENTOS DE AUDIO Y DIRECTO ---
+    function setDeckVisualMode(id, mode) {
+        deckModes[id] = mode;
+        const seekBar = document.getElementById('seek-' + id), tot = document.getElementById('time-tot-' + id);
+        seekBar.disabled = (mode === 'url-live'); 
+        seekBar.style.opacity = (mode === 'url-live') ? '0.3' : '1';
+        if(mode === 'url-live') {
+            tot.innerText = "DIRECTO";
+        } else if (mode === 'url-vod') {
+            tot.innerText = "DIFERIDO"; 
+        }
+    }
+
+    ['A', 'B'].forEach(id => {
+        const aud = document.getElementById('aud' + id);
+        aud.addEventListener('loadedmetadata', () => { 
+            if(deckModes[id] === 'file' || deckModes[id] === 'url-vod') { 
+                document.getElementById('time-tot-' + id).innerText = formatMinSec(aud.duration); 
+                document.getElementById('seek-' + id).max = aud.duration; 
+            } 
         });
-
-        peer.on('open', (id) => {
-            statusText.innerText = "Conectando al estudio...";
-            
-            // Creamos un stream vacío estrictamente necesario para que PeerJS inicie la llamada
-            const dummyStream = audioCtx.createMediaStreamDestination().stream;
-            
-            // CLAVE: Enviamos el metadato 'role: listener' para que el transmisor nos trate como oyente
-            currentCall = peer.call(HOST_PRIVADO, dummyStream, { metadata: { role: 'listener' } });
-
-            currentCall.on('stream', (remoteStream) => {
-                retryCount = 0; // Éxito: reseteamos el contador de reintentos
-                statusText.innerText = "● EN DIRECTO";
-                statusText.classList.add('on-air');
-                btnConnect.innerText = "SINTONIZADO";
-                
-                player.srcObject = remoteStream;
-                player.play().catch(e => console.error("Error al reproducir:", e));
-            });
-
-            currentCall.on('error', (err) => {
-                console.warn("Llamada rechazada o fallida:", err);
-                manejarDesconexion();
-            });
-
-            currentCall.on('close', () => {
-                manejarDesconexion();
-            });
-
-            // Monitorizar el estado profundo del túnel P2P (Detecta si te quedas sin WiFi o 4G)
-            currentCall.peerConnection.addEventListener('iceconnectionstatechange', () => {
-                const state = currentCall.peerConnection.iceConnectionState;
-                if (state === 'disconnected' || state === 'failed' || state === 'closed') {
-                    console.warn("Corte de red detectado (ICE State: " + state + ")");
-                    manejarDesconexion();
+        aud.addEventListener('timeupdate', () => { 
+            if ((deckModes[id] === 'file' || deckModes[id] === 'url-vod') && isFinite(aud.duration)) {
+                document.getElementById('time-curr-' + id).innerText = formatMinSec(aud.currentTime); 
+                document.getElementById('seek-' + id).value = aud.currentTime; 
+                if(isAutoPlay && !crossfadingInProgress && aud.duration - aud.currentTime < 3.0) {
+                    doAutoCrossfade(id === 'A' ? 'B' : 'A');
                 }
+            } else if (deckModes[id] === 'url-live') {
+                document.getElementById('time-curr-' + id).innerText = "ON";
+            }
+        });
+        aud.addEventListener('ended', () => { 
+            if (isAutoPlay && (deckModes[id] === 'file' || deckModes[id] === 'url-vod') && !crossfadingInProgress) playNextInAuto(); 
+        });
+    });
+
+    function seekDeck(id) { if(deckModes[id] !== 'url-live') document.getElementById('aud' + id).currentTime = document.getElementById('seek-' + id).value; }
+    async function ensureAudioContext() { if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); }
+    
+    // Iniciar servidor privado independiente del init general
+    function initPrivateServer() {
+        if(privateServerInit) return;
+        const btnInit = document.getElementById('btn-init-private');
+        btnInit.innerText = "INICIANDO SISTEMA...";
+        
+        peerPrivate = new Peer('maitino-studio-host-v2', { host: 'maitino-peer-server.onrender.com', port: 443, secure: true });
+        
+        peerPrivate.on('open', () => {
+            privateServerInit = true;
+            btnInit.innerText = "SISTEMA INICIADO";
+            btnInit.classList.add('active');
+        });
+        
+        peerPrivate.on('error', () => {
+            btnInit.innerText = "ERROR EN SERVIDOR";
+            setTimeout(() => { btnInit.innerText = "INICIAR SISTEMA (SERVIDOR PRIVADO)"; }, 3000);
+        });
+        
+        // Array para rastrear qué canales móviles están en uso
+        let activeMovCalls = [false, false, false, false, false];
+        
+        peerPrivate.on('call', async (call) => {
+            await init(); // Asegurar que el contexto de audio esté listo
+            
+            // 1. Diferenciar Oyente vs Periodista (Móvil)
+            let isListener = call.metadata && call.metadata.role === 'listener';
+
+            // Siempre conectamos al bus de audio maestro del directo (Antena) para darle retorno/emisión
+            call.answer(liveDest.stream);
+
+            if (isListener) {
+                // Si es OYENTE: No lo metemos a la mesa. Hemos terminado aquí.
+                return;
+            }
+
+            // 2. Si es PERIODISTA: Capturamos su voz y la metemos a la mesa
+            call.on('stream', (remoteStream) => {
+                // Buscar el primer canal de Móvil disponible (del 1 al 4)
+                let slot = 1;
+                for(let i = 1; i <= 4; i++) {
+                    if(!activeMovCalls[i]) {
+                        slot = i;
+                        break;
+                    }
+                }
+                activeMovCalls[slot] = true;
+
+                // Asignar al reproductor HTML (silenciado para no crear eco)
+                const audioMovil = document.getElementById('remote-audio-' + slot);
+                audioMovil.srcObject = remoteStream;
+                audioMovil.play().catch(() => {});
+
+                // Conecta la voz entrante pura al TRIM del canal correspondiente
+                const movSrc = audioCtx.createMediaStreamSource(remoteStream);
+                try { movSrc.disconnect(); } catch(e){} // Prevenir doble enrutamiento
+                movSrc.connect(movTrims[slot]);
+
+                // Cambia el indicador a verde
+                const stat = document.getElementById('m' + slot + '-stat');
+                if (stat) {
+                    stat.innerText = "ONLINE";
+                    stat.style.color = "#00ffaa";
+                }
+
+                // Liberar el canal cuando la Móvil cuelgue o se desconecte
+                call.on('close', () => {
+                    activeMovCalls[slot] = false;
+                    if (stat) {
+                        stat.innerText = "OFFLINE";
+                        stat.style.color = "gray";
+                    }
+                });
             });
         });
-
-        peer.on('error', (err) => {
-            console.error("Error de conexión al servidor:", err);
-            manejarDesconexion();
-        });
-        
-        peer.on('disconnected', () => {
-            // Si el servidor inactivo nos corta, nos reconectamos silenciosamente al servidor base
-            if (!peer.destroyed) {
-                peer.reconnect();
-            }
-        });
-
-        // Ping para mantener la conexión viva con el servidor de Render y que no nos expulse
-        clearInterval(keepAliveInterval);
-        keepAliveInterval = setInterval(() => {
-            if (peer && !peer.disconnected && !peer.destroyed) {
-                peer.socket.send({ type: 'PING' });
-            }
-        }, 15000); 
     }
 
-    function manejarDesconexion() {
-        if (!isConnecting && player.paused) return; // Evitar bucles dobles
-        
-        isConnecting = false;
-        statusText.classList.remove('on-air');
-        statusText.innerText = "Señal perdida. Reconectando...";
-        btnConnect.innerText = "RECONECTANDO...";
-        btnConnect.disabled = true;
-        
-        player.pause();
-        player.srcObject = null;
-        
-        if (currentCall) {
-            currentCall.close();
-            currentCall = null;
-        }
+    // --- INICIALIZACIÓN MOTOR ---
+    async function init() {
+        if(audioCtx) await ensureAudioContext();
+        if(isInit || isInitializing) return; 
+        isInitializing = true;
 
-        // Sistema de Reconexión Inteligente (Exponential Backoff)
-        // Intentará a los 2s, 4s, 8s, 16s, hasta un tope de 30s por intento
-        const retraso = Math.min(2000 * Math.pow(2, retryCount), 30000);
-        retryCount++;
+        try {
+            // Buffer de lectura pequeño habilitado en contexto
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive', sampleRate: 48000 });
+            
+            masterDest = audioCtx.createMediaStreamDestination();
+            liveDest = audioCtx.createMediaStreamDestination();
+            micMovDest = audioCtx.createMediaStreamDestination();
+            pflDest = audioCtx.destination;
+
+            eqBassNode = audioCtx.createBiquadFilter(); eqBassNode.type = 'lowshelf'; eqBassNode.frequency.value = 250;
+            eqMidNode = audioCtx.createBiquadFilter(); eqMidNode.type = 'peaking'; eqMidNode.frequency.value = 1000; eqMidNode.Q.value = 1.0;
+            eqTrebleNode = audioCtx.createBiquadFilter(); eqTrebleNode.type = 'highshelf'; eqTrebleNode.frequency.value = 4000;
+            bwFilterNode = audioCtx.createBiquadFilter(); 
+
+            wobbleGain = audioCtx.createGain(); wobbleGain.gain.value = 1;
+            wobbleOsc = audioCtx.createOscillator(); wobbleOsc.frequency.value = 0.3;
+            wobbleDepth = audioCtx.createGain(); wobbleDepth.gain.value = 0;
+            wobbleOsc.connect(wobbleDepth).connect(wobbleGain.gain);
+            wobbleOsc.start();
+
+            outSplitter = audioCtx.createChannelSplitter(2);
+            outMerger = audioCtx.createChannelMerger(2);
+
+            limiter = audioCtx.createDynamicsCompressor();
+            limiter.threshold.value = -2.0; limiter.knee.value = 0; limiter.ratio.value = 10; limiter.attack.value = 0.003;
+
+            musicBus = audioCtx.createGain(); duckingGain = audioCtx.createGain(); 
+            musicBus.connect(duckingGain);
+            masterGain = audioCtx.createGain();
+            liveGain = audioCtx.createGain(); liveGain.gain.value = 0;
+
+            duckingGain.connect(masterGain);
+            masterGain.connect(eqBassNode);
+            eqBassNode.connect(eqMidNode);
+            eqMidNode.connect(eqTrebleNode);
+            eqTrebleNode.connect(bwFilterNode);
+
+            /* LA MONITORIZACIÓN DEFINITIVA:
+               Se manda el audio FINAL al audífono general del locutor
+               Esto asegura que todos los efectos de broadcast afecten la escucha */
+            limiter.connect(audioCtx.destination); 
+            limiter.connect(masterDest);           
+            limiter.connect(liveGain);             
+            liveGain.connect(liveDest);
+
+            // --- MICRÓFONO NATIVO PURO ---
+            // Apagamos todas las falsas ayudas automáticas web para audio broadcast 100% puro
+            const stream1 = await navigator.mediaDevices.getUserMedia({ 
+                audio: { 
+                    echoCancellation: false, 
+                    noiseSuppression: false, 
+                    autoGainControl: false, 
+                    sampleRate: 48000,
+                    latency: { ideal: 0.01 },
+                    channelCount: 2
+                } 
+            });
+            const mSrc1 = audioCtx.createMediaStreamSource(stream1);
+            
+            mic1Trim = audioCtx.createGain(); mic1Trim.gain.value = 1;
+            mic1Gain = audioCtx.createGain(); mic1Gain.gain.value = 0.8;
+            mic1PFL = audioCtx.createGain(); mic1PFL.gain.value = 0;
+            mic1Comp = audioCtx.createDynamicsCompressor();
+            mic1Comp.threshold.value = -18; mic1Comp.ratio.value = 3;
+            
+            mSrc1.connect(mic1Trim);
+            mic1Trim.connect(mic1Comp);
+            mic1Comp.connect(mic1Gain).connect(masterGain);
+            mic1Trim.connect(mic1PFL).connect(pflDest);
+            mic1Gain.connect(micMovDest);
+
+            // --- DECKS ---
+            dATrim = audioCtx.createGain(); dBTrim = audioCtx.createGain();
+            dAGain = audioCtx.createGain(); dBGain = audioCtx.createGain();
+            dAPFL = audioCtx.createGain(); dBPFL = audioCtx.createGain(); dAPFL.gain.value = 0; dBPFL.gain.value = 0;
+            
+            const srcA = audioCtx.createMediaElementSource(document.getElementById('audA'));
+            const srcB = audioCtx.createMediaElementSource(document.getElementById('audB'));
+            
+            srcA.connect(dATrim); dATrim.connect(dAGain).connect(musicBus); dATrim.connect(dAPFL).connect(pflDest);
+            srcB.connect(dBTrim); dBTrim.connect(dBGain).connect(musicBus); dBTrim.connect(dBPFL).connect(pflDest);
+
+            // --- MOVILES ---
+            for(let i=1; i<=4; i++) {
+                movTrims[i] = audioCtx.createGain();
+                movGains[i] = audioCtx.createGain(); movGains[i].gain.value = 0.8;
+                movPFLs[i] = audioCtx.createGain(); movPFLs[i].gain.value = 0;
+
+                // LA CIRUGÍA: Conectar los cables a la mesa principal
+                movTrims[i].connect(movGains[i]);
+                movGains[i].connect(masterGain);
+                movGains[i].connect(micMovDest); // Para que se grabe
+                movTrims[i].connect(movPFLs[i]).connect(pflDest); // Para el botón CUE
+            }
+
+            // CREACION DE ANALIZADORES VU POR CANAL
+            anMic1 = audioCtx.createAnalyser(); mic1Gain.connect(anMic1);
+            anDA = audioCtx.createAnalyser(); dAGain.connect(anDA);
+            anDB = audioCtx.createAnalyser(); dBGain.connect(anDB);
+            for(let i=1; i<=4; i++) { anMov[i] = audioCtx.createAnalyser(); movGains[i].connect(anMov[i]); }
+            anMaster = audioCtx.createAnalyser(); limiter.connect(anMaster);
+
+            analyzer = audioCtx.createAnalyser();
+            limiter.connect(analyzer); // Visualiza el audio POST efectos en gráfico inferior
+
+            isInit = true; isInitializing = false;
+            updateMatrix(); updateTrims(); updateGains(); visualize(); processDucking();
+
+        } catch (error) {
+            isInitializing = false;
+            alert("⚠️ FALLO CRÍTICO: Asegúrate de permitir el micrófono y dar los permisos web correctos.");
+        }
+    }
+
+    // --- CONTROLES DE MEZCLA ---
+    function updateTrims() {
+        if(!isInit) return;
+        mic1Trim.gain.value = document.getElementById('trim-mic1').value;
+        dATrim.gain.value = document.getElementById('trim-da').value;
+        dBTrim.gain.value = document.getElementById('trim-db').value;
+        for(let i=1; i<=4; i++) if(movTrims[i]) movTrims[i].gain.value = document.getElementById(`trim-mov${i}`).value;
+    }
+
+    function updateGains() {
+        if(!isInit) return;
+        let cf = document.getElementById('cf-slider').value / 100;
+        let cfGainA = Math.cos(cf * 0.5 * Math.PI);
+        let cfGainB = Math.cos((1.0 - cf) * 0.5 * Math.PI);
+
+        mic1Gain.gain.setTargetAtTime(mMicMuted ? 0 : document.getElementById('v-mic1').value, audioCtx.currentTime, 0.05);
+        dAGain.gain.value = document.getElementById('v-da').value * cfGainA; 
+        dBGain.gain.value = document.getElementById('v-db').value * cfGainB;
         
-        console.log(`Reintentando conexión en ${retraso/1000} segundos... (Intento ${retryCount})`);
+        for(let i=1; i<=4; i++) { if(movGains[i]) movGains[i].gain.value = mMuted[i] ? 0 : document.getElementById(`v-mov${i}`).value; }
+        masterGain.gain.value = document.getElementById('v-mas').value;
+    }
+
+    async function togglePFL(ch) {
+        await init();
+        pflActive[ch] = !pflActive[ch];
+        document.getElementById(`pfl-${ch}`).classList.toggle('active', pflActive[ch]);
+        
+        let targetGain = pflActive[ch] ? 1.0 : 0;
+        if(ch === 'mic1') mic1PFL.gain.value = targetGain;
+        if(ch === 'da') dAPFL.gain.value = targetGain;
+        if(ch === 'db') dBPFL.gain.value = targetGain;
+        if(ch.startsWith('mov')) movPFLs[parseInt(ch.replace('mov',''))].gain.value = targetGain;
+    }
+
+    async function toggleMic() {
+        await init(); mMicMuted = !mMicMuted;
+        const b = document.getElementById('b-mic1');
+        b.classList.toggle('active', !mMicMuted); b.classList.toggle('off', mMicMuted);
+        b.innerText = !mMicMuted ? "ON AIR" : "OFF AIR";
+        updateGains();
+    }
+
+    async function toggleMov(num) {
+        await init(); mMuted[num] = !mMuted[num];
+        const b = document.getElementById(`b-mov${num}`);
+        b.classList.toggle('active', !mMuted[num]); b.classList.toggle('off', mMuted[num]);
+        b.innerText = !mMuted[num] ? "ON AIR" : "MUTE"; 
+        updateGains();
+    }
+
+    function toggleDucking() {
+        isDucking = !isDucking; const b = document.getElementById('b-duck1');
+        b.classList.toggle('active'); b.innerText = isDucking ? "DUCKING ON" : "DUCKING OFF";
+    }
+
+    function processDucking() {
+        const data = new Uint8Array(analyzer.frequencyBinCount);
+        const check = () => {
+            if(isDucking && !mMicMuted) {
+                analyzer.getByteFrequencyData(data);
+                let avg = data.reduce((a,b) => a+b)/data.length;
+                duckingGain.gain.setTargetAtTime(avg > 15 ? 0.25 : 1.0, audioCtx.currentTime, 0.15);
+            } else { duckingGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.2); }
+            requestAnimationFrame(check);
+        }; check();
+    }
+
+    // --- MATRIZ DE PROCESAMIENTO ---
+    function updateMatrix() {
+        if(!isInit) return;
+        document.getElementById('mx-bass-val').innerText = document.getElementById('mx-bass').value + "dB";
+        document.getElementById('mx-mid-val').innerText = document.getElementById('mx-mid').value + "dB";
+        document.getElementById('mx-treble-val').innerText = document.getElementById('mx-treble').value + "dB";
+        document.getElementById('mx-lim-thres-val').innerText = document.getElementById('mx-lim-thres').value + "dB";
+        document.getElementById('mx-lim-ratio-val').innerText = document.getElementById('mx-lim-ratio').value + ":1";
+
+        eqBassNode.gain.value = parseFloat(document.getElementById('mx-bass').value);
+        eqMidNode.gain.value = parseFloat(document.getElementById('mx-mid').value);
+        eqTrebleNode.gain.value = parseFloat(document.getElementById('mx-treble').value);
+        
+        limiter.threshold.value = parseFloat(document.getElementById('mx-lim-thres').value);
+        limiter.ratio.value = parseFloat(document.getElementById('mx-lim-ratio').value);
+        
+        if (wobbleDepth) wobbleDepth.gain.value = parseFloat(document.getElementById('mx-wobble').value);
+
+        const bw = document.getElementById('mx-bw').value;
+        if(bw === 'super') { bwFilterNode.type = 'allpass'; }
+        else if(bw === 'uhd') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 20000; }
+        else if(bw === 'fm-hq') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 18000; }
+        else if(bw === 'fm') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 15000; }
+        else if(bw === 'am-hq') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 10000; }
+        else if(bw === 'am') { bwFilterNode.type = 'lowpass'; bwFilterNode.frequency.value = 9000; }
+        else if(bw === 'tel') { bwFilterNode.type = 'bandpass'; bwFilterNode.frequency.value = 1850; bwFilterNode.Q.value = 0.8; }
+        else if(bw === 'sub') { bwFilterNode.type = 'bandpass'; bwFilterNode.frequency.value = 750; bwFilterNode.Q.value = 2.5; }
+        else if(bw === 'morse') { bwFilterNode.type = 'bandpass'; bwFilterNode.frequency.value = 800; bwFilterNode.Q.value = 10; }
+        else if(bw === 'minimo') { bwFilterNode.type = 'bandpass'; bwFilterNode.frequency.value = 1000; bwFilterNode.Q.value = 1.5; }
+
+        const outMode = document.getElementById('mx-out').value;
+        bwFilterNode.disconnect(); outSplitter.disconnect(); outMerger.disconnect();
+        
+        if (outMode === 'stereo') {
+            bwFilterNode.connect(wobbleGain);
+        } else {
+            bwFilterNode.connect(outSplitter);
+            if (outMode === 'monosum' || outMode === 'dualmono' || outMode === 'mono') {
+                outSplitter.connect(outMerger, 0, 0); outSplitter.connect(outMerger, 1, 0); 
+                outSplitter.connect(outMerger, 0, 1); outSplitter.connect(outMerger, 1, 1); 
+            } else if (outMode === 'monol') {
+                outSplitter.connect(outMerger, 0, 0); outSplitter.connect(outMerger, 0, 1); 
+            } else if (outMode === 'monor') {
+                outSplitter.connect(outMerger, 1, 0); outSplitter.connect(outMerger, 1, 1); 
+            } else if (outMode === 'inv') {
+                outSplitter.connect(outMerger, 1, 0); outSplitter.connect(outMerger, 0, 1); 
+            }
+            outMerger.connect(wobbleGain);
+        }
+        wobbleGain.connect(limiter);
+    }
+    
+    function updateLiveBitrate() {
+        let bps = parseInt(document.getElementById('mx-bitrate').value) * 1000;
+        console.log("Forzando ancho de banda de red Webrtc a: " + bps + " bps");
+    }
+
+    // --- CARGA DE ARCHIVOS Y URL EN DIRECTO ---
+    async function loadD(id, input) { 
+        await init(); 
+        setDeckVisualMode(id, 'file');
+        document.getElementById('aud'+id).src = URL.createObjectURL(input.files[0]); 
+    }
+    
+    // Función Mejorada para Evitar Cuelgues en Enlaces
+    async function loadUrl(id, type) {
+        await init(); 
+        const urlInput = document.getElementById('url-' + type + '-' + id).value.trim(); 
+        if(!urlInput) return;
+        setDeckVisualMode(id, type === 'live' ? 'url-live' : 'url-vod'); 
+        const aud = document.getElementById('aud' + id); 
+        
+        // Purgar caché para forzar reconexión limpia
+        aud.pause();
+        aud.removeAttribute('src'); 
+        aud.load();
         
         setTimeout(() => {
-            if (audioCtx && audioCtx.state === 'running') {
-                conectarPeer();
-            } else {
-                // Si el navegador congeló la pestaña, pedimos pulsar de nuevo
-                statusText.innerText = "Emisión detenida";
-                btnConnect.innerText = "REANUDAR CONEXIÓN";
-                btnConnect.disabled = false;
+            aud.src = urlInput; 
+            aud.load();
+            playDeck(id); // Autoejecutar para evitar silencio
+        }, 50);
+    }
+    
+    async function playDeck(id) {
+        await ensureAudioContext(); const p = document.getElementById('aud'+id); const b = document.getElementById('p'+id);
+        if(p.paused) { p.play().then(() => { b.innerHTML = '<i class="fas fa-pause"></i>'; b.style.color = "#00ffaa"; }).catch(e => console.error(e)); } 
+        else { p.pause(); b.innerHTML = '<i class="fas fa-play"></i>'; b.style.color = "#fff"; }
+    }
+    
+    function toggleLoop(id) { 
+        const p = document.getElementById('aud'+id); 
+        p.loop = !p.loop; 
+        document.getElementById('l'+id).classList.toggle('active', p.loop); 
+    }
+
+    // --- AUTOMATIZACION PLAYLIST ---
+    function toggleAutoPlay() {
+        isAutoPlay = !isAutoPlay; const btn = document.getElementById('btn-autoplay');
+        btn.classList.toggle('active', isAutoPlay); btn.innerText = isAutoPlay ? "AUTO: ON" : "AUTO: OFF";
+        if (isAutoPlay && playlistFilesArray.length > 0 && document.getElementById('audA').paused && document.getElementById('audB').paused) {
+            document.getElementById('cf-slider').value = 0;
+            updateGains(); playNextInAuto();
+        }
+    }
+
+    function doAutoCrossfade(nextDeck) {
+        if(crossfadingInProgress || playlistFilesArray.length === 0) return;
+        crossfadingInProgress = true;
+        
+        currentAutoIndex = (currentAutoIndex + 1) % playlistFilesArray.length;
+        const aud = document.getElementById('aud' + nextDeck);
+        setDeckVisualMode(nextDeck, 'file');
+        aud.src = URL.createObjectURL(playlistFilesArray[currentAutoIndex]); aud.loop = false;
+        document.getElementById('l'+nextDeck).classList.remove('active');
+        updatePlaylistUI();
+        
+        aud.play().then(() => {
+            document.getElementById('p'+nextDeck).innerHTML = '<i class="fas fa-pause"></i>';
+            let slider = document.getElementById('cf-slider');
+            let startVal = parseInt(slider.value);
+            let endVal = nextDeck === 'B' ? 100 : 0;
+            let steps = 40; let currentStep = 0;
+            
+            let fadeInt = setInterval(() => {
+                currentStep++;
+                slider.value = startVal + ((endVal - startVal) * (currentStep / steps));
+                updateGains();
+                if(currentStep >= steps) {
+                    clearInterval(fadeInt);
+                    crossfadingInProgress = false;
+                    let prevDeck = nextDeck === 'B' ? 'A' : 'B';
+                    document.getElementById('aud'+prevDeck).pause();
+                    document.getElementById('p'+prevDeck).innerHTML = '<i class="fas fa-play"></i>';
+                }
+            }, 50);
+        });
+    }
+
+    function playNextInAuto() {
+        if (!isAutoPlay || playlistFilesArray.length === 0) return;
+        currentAutoIndex = (currentAutoIndex + 1) % playlistFilesArray.length;
+        init().then(() => {
+            const audA = document.getElementById('audA');
+            setDeckVisualMode('A', 'file');
+            audA.src = URL.createObjectURL(playlistFilesArray[currentAutoIndex]); audA.loop = false; 
+            document.getElementById('lA').classList.remove('active');
+            updatePlaylistUI();
+            audA.play(); document.getElementById('pA').innerHTML = '<i class="fas fa-pause"></i>';
+        });
+    }
+
+    function handlePlaylistUpload(input) {
+        const files = Array.from(input.files); playlistFilesArray = playlistFilesArray.concat(files);
+        if(files.length > 0 && document.getElementById('pl-empty')) document.getElementById('pl-empty').remove();
+        updatePlaylistUI();
+    }
+    
+    function updatePlaylistUI() {
+        const list = document.getElementById('pl-list'); list.innerHTML = '';
+        playlistFilesArray.forEach((file, index) => {
+            const li = document.createElement('li'); li.className = 'playlist-item';
+            if(index === currentAutoIndex) li.classList.add('playing');
+            const nameSpan = document.createElement('span'); nameSpan.innerText = file.name.length > 25 ? file.name.substring(0, 25) + '...' : file.name;
+            const actions = document.createElement('div'); actions.className = 'pl-actions';
+            
+            const btnA = document.createElement('button'); btnA.innerText = 'Deck A';
+            btnA.onclick = async () => { await init(); setDeckVisualMode('A','file'); document.getElementById('audA').src = URL.createObjectURL(file); };
+            const btnB = document.createElement('button'); btnB.innerText = 'Deck B';
+            btnB.onclick = async () => { await init(); setDeckVisualMode('B','file'); document.getElementById('audB').src = URL.createObjectURL(file); };
+
+            actions.appendChild(btnA); actions.appendChild(btnB); li.appendChild(nameSpan); li.appendChild(actions);
+            list.appendChild(li);
+        });
+        
+        let nextIdx = (currentAutoIndex + 1) % playlistFilesArray.length;
+        if(playlistFilesArray.length > 0) {
+            document.getElementById('pl-upnext').innerText = "Sig: " + (playlistFilesArray[nextIdx].name.substring(0,20));
+            document.getElementById('pl-total').innerText = playlistFilesArray.length + " pistas";
+        }
+    }
+
+    // --- BROADCAST / GRABACION ---
+    async function toggleLive() {
+        await init(); if(!isInit) return; 
+        const b = document.getElementById('b-live');
+        const neon = document.getElementById('neon-live');
+        if(!isBroadcasting) {
+            isBroadcasting = true; liveGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 1);
+            b.innerText = "● EN EL AIRE"; b.style.background = "red"; startTimes.live = Date.now();
+            neon.classList.add('on-air');
+            
+            // Reparación del contador: Limpiar y reasignar
+            if(intervals.live) clearInterval(intervals.live); 
+            intervals.live = setInterval(() => document.getElementById('t-live').innerText = `📡 Antena: ${formatTimeNoMs(Date.now() - startTimes.live)}`, 1000); 
+        } else {
+            isBroadcasting = false; liveGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+            setTimeout(() => { b.innerText = "CONECTAR ANTENA"; b.style.background = "#00e676"; neon.classList.remove('on-air'); }, 1000);
+            
+            // Detener contador y resetear texto
+            if(intervals.live) clearInterval(intervals.live); 
+            document.getElementById('t-live').innerText = "📡 Antena: 00:00:00";
+        }
+    }
+
+    async function rec(type) {
+        await init(); if(!isInit) return;
+        const b = document.getElementById('r-'+(type === 'master' ? 'mas' : type));
+        if(!recorders[type]) {
+            const st = (type === 'master') ? masterDest.stream : micMovDest.stream;
+            recorders[type] = new MediaRecorder(st, { audioBitsPerSecond: 320000 }); 
+            chunks[type] = []; recorders[type].ondataavailable = e => chunks[type].push(e.data);
+            recorders[type].onstop = () => {
+                const blob = new Blob(chunks[type], {type: 'audio/webm'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                let customPrefix = document.getElementById('rec-filename').value.trim() || "MAITINO_REC";
+                a.download = `${customPrefix}_${type.toUpperCase()}_${Date.now()}.webm`; a.click();
+            };
+            recorders[type].start(); b.classList.add('active'); startTimes[type] = Date.now();
+            
+            // Reparación del contador: Limpiar y reasignar
+            if(intervals[type]) clearInterval(intervals[type]); 
+            intervals[type] = setInterval(() => {
+                let txt = type === 'master' ? 'Máster' : 'Voz';
+                document.getElementById('t-'+type).innerText = `🔴 ${txt}: ${formatTimeNoMs(Date.now() - startTimes[type])}`
+            }, 1000); 
+        } else { 
+            recorders[type].stop(); delete recorders[type]; b.classList.remove('active'); 
+            
+            // Detener contador y resetear texto
+            if(intervals[type]) clearInterval(intervals[type]); 
+            let txt = type === 'master' ? 'Máster' : 'Voz';
+            document.getElementById('t-'+type).innerText = `🔴 ${txt}: 00:00:00`; 
+        }
+    }
+
+    // --- VISUALIZADORES EN TIEMPO REAL ---
+    function drawVUMeter(an, cvId) {
+        if(!an) return;
+        const cv = document.getElementById(cvId);
+        if(!cv) return;
+        const ct = cv.getContext('2d');
+        const data = new Float32Array(an.fftSize);
+        an.getFloatTimeDomainData(data);
+        
+        let peak = 0;
+        for(let i = 0; i < data.length; i++) {
+            if(Math.abs(data[i]) > peak) peak = Math.abs(data[i]);
+        }
+        
+        let db = 20 * Math.log10(peak);
+        let y = (db + 50) / 50; 
+        if(y < 0) y = 0; 
+        if(y > 1) y = 1;
+        
+        ct.fillStyle = '#050505'; 
+        ct.fillRect(0, 0, cv.width, cv.height);
+        
+        let grad = ct.createLinearGradient(0, cv.height, 0, 0);
+        grad.addColorStop(0, '#00ffaa'); 
+        grad.addColorStop(0.65, '#ffb300'); 
+        grad.addColorStop(1, '#ff1a1a');
+        
+        let h = y * cv.height;
+        ct.fillStyle = grad;
+        ct.fillRect(0, cv.height - h, cv.width, h);
+    }
+
+    function visualize() {
+        const frame = () => {
+            requestAnimationFrame(frame);
+            
+            // Visualizador Espectral Máster
+            if (analyzer) {
+                const cvLg = document.getElementById('cv-master-large');
+                if (cvLg) {
+                    const ctLg = cvLg.getContext('2d');
+                    const d = new Uint8Array(analyzer.frequencyBinCount);
+                    analyzer.getByteFrequencyData(d);
+                    
+                    ctLg.fillStyle = '#050505'; 
+                    ctLg.fillRect(0, 0, cvLg.width, cvLg.height);
+                    
+                    let gradSpec = ctLg.createLinearGradient(0, cvLg.height, 0, 0);
+                    gradSpec.addColorStop(0, '#00ffaa'); 
+                    gradSpec.addColorStop(0.8, '#ffb300'); 
+                    gradSpec.addColorStop(1, '#ff1a1a');
+                    ctLg.fillStyle = gradSpec;
+                    
+                    let barWidth = (cvLg.width / d.length) * 4;
+                    for(let i = 0; i < d.length; i += 6) {
+                        let barHeight = d[i] * (cvLg.height / 255);
+                        ctLg.fillRect((i / d.length) * cvLg.width, cvLg.height - barHeight, barWidth, barHeight);
+                    }
+                }
             }
-        }, retraso);
+            
+            drawVUMeter(anMic1, 'vu-mic1');
+            for(let i=1; i<=4; i++) drawVUMeter(anMov[i], 'vu-mov' + i);
+            drawVUMeter(anDA, 'vu-da');
+            drawVUMeter(anDB, 'vu-db');
+            drawVUMeter(anMaster, 'vu-mas'); 
+            
+        }; 
+        frame();
     }
 </script>
 </body>
