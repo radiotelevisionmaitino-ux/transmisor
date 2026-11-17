@@ -1102,19 +1102,15 @@
         await init(); 
         const urlInput = document.getElementById('url-' + type + '-' + id).value.trim(); 
         if(!urlInput) return;
-        setDeckVisualMode(id, type === 'live' ? 'url-live' : 'url-vod'); 
+        
+        // Si es diferido ('vod'), el motor lo trata internamente exactamente igual que un 'file'
+        setDeckVisualMode(id, type === 'live' ? 'url-live' : 'file'); 
         const aud = document.getElementById('aud' + id); 
         
-        // Purgar caché para forzar reconexión limpia
         aud.pause();
-        aud.removeAttribute('src'); 
+        aud.src = urlInput; 
         aud.load();
-        
-        setTimeout(() => {
-            aud.src = urlInput; 
-            aud.load();
-            playDeck(id); // Autoejecutar para evitar silencio
-        }, 50);
+        playDeck(id); // Autoejecutar directamente para evitar que el navegador bloquee el autoplay
     }
     
     async function playDeck(id) {
