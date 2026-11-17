@@ -2,718 +2,214 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>MAITINO STUDIO | MASTER ULTRA PRO HD</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sintonizador Maitino</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #030305; --panel: #121216; --accent: #00ffaa; --danger: #ff1a1a; --border: rgba(255,255,255,0.1); --ducking: #e91e63; }
-        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .clock-display { font-family: monospace; font-size: 1.2rem; color: var(--accent); margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
-        .master-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; width: 100%; max-width: 1700px; }
-        
-        .mixer { display: grid; grid-template-columns: repeat(8, 1fr); gap: 15px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid var(--border); }
-        .strip { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 15px; border: 1px solid var(--border); text-align: center; display: flex; flex-direction: column; }
-        .fader { -webkit-appearance: slider-vertical; width: 30px; height: 200px; margin: 15px auto; cursor: pointer; }
-        .seek-bar { width: 100%; height: 5px; margin-top: 8px; cursor: pointer; accent-color: var(--accent); }
-        .btn { background: #1c1c20; color: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn.active { background: var(--danger); border-color: var(--danger); }
-        .btn-duck { background: #333; color: #888; margin-top: 10px; font-size: 0.7rem; border: 1px dashed #555; }
-        .btn-duck.active { background: var(--ducking); color: white; border-style: solid; }
-        .btn-live { background: #00e676; color: #000; height: 60px; font-size: 1.1rem; width: 100%; margin-top: 10px; }
-        canvas { width: 100%; height: 50px; background: #000; border-radius: 5px; }
-        h3 { font-size: 0.7rem; text-transform: uppercase; color: #888; margin: 0; }
-        .timers { font-family: monospace; font-size: 0.9rem; text-align: left; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .t-row { margin: 5px 0; color: #888; }
-        .t-row.active { color: var(--danger); }
-        .t-row.live-active { color: #00e676; }
-        .deck-timer-container { display: flex; justify-content: space-between; font-size: 0.85rem; font-family: monospace; color: var(--accent); margin-top: 10px; padding: 0 5px; font-weight: bold;}
-
-        /* --- NUEVOS ESTILOS PARA LOS PANELES INFERIORES --- */
-        .bottom-panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 100%; max-width: 1700px; margin-top: 20px; }
-        .sub-panel { background: var(--panel); padding: 20px; border-radius: 15px; border: 1px solid var(--border); display: flex; flex-direction: column; }
-        .sub-panel h3 { margin-bottom: 15px; color: var(--accent); font-size: 0.85rem; }
-        
-        /* Visualizador Extendido */
-        #cv-extended { width: 100%; height: 120px; background: #000; border-radius: 8px; border: 1px solid var(--border); }
-        
-        /* Playlist */
-        .playlist-upload-btn { background: #2a2a30; border: 1px dashed var(--border); color: #888; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 0.8rem; flex: 1; }
-        .playlist-upload-btn:hover { border-color: var(--accent); color: #fff; }
-        .playlist-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 120px; border-radius: 5px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); }
-        .playlist-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #222; font-size: 0.75rem; color: #ccc; }
-        .playlist-item:last-child { border-bottom: none; }
-        .pl-actions button { background: #333; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px; }
-        .pl-actions button:hover { background: var(--accent); color: black; }
-        
-        /* Notas y Archivo */
-        .config-input { width: calc(100% - 20px); background: #000; border: 1px solid var(--border); color: #00ffaa; padding: 10px; border-radius: 5px; font-family: monospace; margin-bottom: 10px; }
-        .notes-area { flex: 1; width: calc(100% - 20px); background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 5px; resize: none; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
-        .notes-area:focus, .config-input:focus { outline: 1px solid var(--accent); }
+        body { 
+            background: #050508; 
+            color: #fff; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        #status { 
+            margin-bottom: 25px; 
+            font-size: 1.1rem; 
+            color: #888; 
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
+        }
+        .btn-play { 
+            background: #00ffaa; 
+            color: #000; 
+            border: none; 
+            padding: 18px 45px; 
+            font-size: 1.2rem; 
+            font-weight: 900; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(0, 255, 170, 0.2);
+        }
+        .btn-play:hover { 
+            background: #00e699; 
+            box-shadow: 0 0 25px rgba(0, 255, 170, 0.6); 
+            transform: scale(1.05);
+        }
+        .btn-play:disabled { 
+            background: #333; 
+            color: #666; 
+            cursor: not-allowed; 
+            box-shadow: none; 
+            transform: none;
+        }
+        .on-air { 
+            color: #ff1a1a !important; 
+            font-weight: bold; 
+            text-shadow: 0 0 15px rgba(255, 26, 26, 0.8); 
+        }
+        audio { display: none; } /* Ocultamos el reproductor feo por defecto */
     </style>
 </head>
 <body>
 
-<div class="clock-display" id="main-clock">CARGANDO SISTEMA...</div>
-
-<div class="master-grid">
-    <div class="mixer">
-        <div class="strip">
-            <h3>Mic 1</h3>
-            <input type="range" id="v-mic" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mic" onclick="toggleMic()">CERRADO</button>
-            <button class="btn btn-duck" id="b-duck" onclick="toggleDucking()">AUTO-DUCKING OFF</button>
-        </div>
-
-        <div class="strip">
-            <h3>Móvil 1</h3>
-            <div id="m-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov1" onclick="toggleMov(1)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio" autoplay hidden></audio>
-        </div>
-
-        <div class="strip">
-            <h3>Móvil 2</h3>
-            <div id="m2-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov2" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov2" onclick="toggleMov(2)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio-2" autoplay hidden></audio>
-        </div>
-
-        <div class="strip">
-            <h3>Móvil 3</h3>
-            <div id="m3-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov3" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov3" onclick="toggleMov(3)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio-3" autoplay hidden></audio>
-        </div>
-
-        <div class="strip">
-            <h3>Móvil 4</h3>
-            <div id="m4-stat" style="font-size: 0.6rem; color: gray;">OFFLINE</div>
-            <input type="range" id="v-mov4" class="fader" min="0" max="1.5" step="0.01" value="1" oninput="updateGains()">
-            <button class="btn" id="b-mov4" onclick="toggleMov(4)" style="margin-top: 5px;">ABIERTO</button>
-            <audio id="remote-audio-4" autoplay hidden></audio>
-        </div>
-
-        <div class="strip">
-            <h3>Deck A</h3>
-            <input type="range" id="v-da" class="fader" min="0" max="1" step="0.01" value="0.7" oninput="updateGains()">
-            <button class="btn" onclick="document.getElementById('fA').click()"><i class="fas fa-upload"></i></button>
-            <div style="display: flex; gap: 5px; margin-top: 5px;">
-                <button class="btn" id="pA" onclick="playDeck('A')" style="flex: 1;" title="Play/Pausa"><i class="fas fa-play"></i></button>
-                <button class="btn" onclick="restartDeck('A')" style="flex: 1;" title="Reiniciar al inicio"><i class="fas fa-backward-step"></i></button>
-                <button class="btn active" id="lA" onclick="toggleLoop('A')" style="flex: 1;" title="Bucle ON/OFF"><i class="fas fa-repeat"></i></button>
-            </div>
-            <div class="deck-timer-container">
-                <span id="time-curr-A">00:00</span>
-                <span id="time-tot-A">00:00</span>
-            </div>
-            <input type="range" class="seek-bar" id="seek-A" min="0" max="100" value="0" step="0.1" oninput="seekDeck('A')">
-            <input type="file" id="fA" hidden onchange="loadD('A',this)"><audio id="audA" loop></audio>
-        </div>
-
-        <div class="strip">
-            <h3>Deck B</h3>
-            <input type="range" id="v-db" class="fader" min="0" max="1" step="0.01" value="0.7" oninput="updateGains()">
-            <button class="btn" onclick="document.getElementById('fB').click()"><i class="fas fa-upload"></i></button>
-            <div style="display: flex; gap: 5px; margin-top: 5px;">
-                <button class="btn" id="pB" onclick="playDeck('B')" style="flex: 1;" title="Play/Pausa"><i class="fas fa-play"></i></button>
-                <button class="btn" onclick="restartDeck('B')" style="flex: 1;" title="Reiniciar al inicio"><i class="fas fa-backward-step"></i></button>
-                <button class="btn active" id="lB" onclick="toggleLoop('B')" style="flex: 1;" title="Bucle ON/OFF"><i class="fas fa-repeat"></i></button>
-            </div>
-            <div class="deck-timer-container">
-                <span id="time-curr-B">00:00</span>
-                <span id="time-tot-B">00:00</span>
-            </div>
-            <input type="range" class="seek-bar" id="seek-B" min="0" max="100" value="0" step="0.1" oninput="seekDeck('B')">
-            <input type="file" id="fB" hidden onchange="loadD('B',this)"><audio id="audB" loop></audio>
-        </div>
-
-        <div class="strip" style="border-color: var(--accent);">
-            <h3>Master Out</h3>
-            <canvas id="cv-master"></canvas>
-            <input type="range" id="v-mas" class="fader" min="0" max="1" step="0.01" value="0.9" oninput="updateGains()">
-            <div style="font-size:0.6rem;">LIMITER ACTIVE</div>
-        </div>
-    </div>
-
-    <div class="sidebar">
-        <div class="mixer" style="grid-template-columns: 1fr; gap: 10px;">
-            <h3>📡 Transmisión</h3>
-            <button class="btn btn-live" id="b-live" onclick="toggleLive()">CONECTAR ANTENA</button>
-            <hr style="width:100%; border:0; border-top:1px solid #333;">
-            <h3>🔴 Grabación</h3>
-            <button class="btn" onclick="rec('master')" id="r-mas">REC MASTER</button>
-            <button class="btn" onclick="rec('micmov')" id="r-micmov" style="margin-top:5px;">REC VOCES (MIC+MOV)</button>
-            
-            <div class="timers">
-                <div id="t-live" class="t-row">📡 EN AIRE: OFF</div>
-                <div id="t-master" class="t-row">🔴 MASTER: OFF</div>
-                <div id="t-micmov" class="t-row">🔴 VOCES: OFF</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="bottom-panels">
-    <div class="sub-panel">
-        <h3><i class="fas fa-wave-square"></i> Analizador de Espectro MASTER</h3>
-        <canvas id="cv-extended"></canvas>
-    </div>
-
-    <div class="sub-panel">
-        <h3><i class="fas fa-list-ol"></i> Playlist Rápida</h3>
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <div class="playlist-upload-btn" onclick="document.getElementById('pl-upload').click()">
-                <i class="fas fa-plus"></i> Añadir pistas
-            </div>
-            <button class="btn btn-duck" id="btn-autoplay" onclick="toggleAutoPlay()" style="margin-top: 0; flex: 1;">MODO AUTO: OFF</button>
-        </div>
-        <input type="file" id="pl-upload" hidden multiple accept="audio/*" onchange="handlePlaylistUpload(this)">
-        <ul class="playlist-list" id="pl-list">
-            <li style="padding:10px; color:#555; text-align:center; font-style:italic;" id="pl-empty">Lista vacía</li>
-        </ul>
-    </div>
-
-    <div class="sub-panel">
-        <h3><i class="fas fa-edit"></i> Guion & Nombre de Grabación</h3>
-        <input type="text" id="rec-filename" class="config-input" placeholder="Ej: MI_PROGRAMA_T01E05 (Nombre base)" title="Prefijo para los archivos grabados">
-        <textarea class="notes-area" placeholder="Escribe aquí tu escaleta, menciones publicitarias, recordatorios, o notas del programa..."></textarea>
-    </div>
-</div>
+    <div id="status">LISTO PARA CONECTAR</div>
+    <button id="btn-connect" class="btn-play">SINTONIZAR RADIO</button>
+    
+    <!-- Reproductor nativo oculto -->
+    <audio id="player" playsinline></audio>
 
 <script>
-    let audioCtx, masterGain, micGain, micComp, dAGain, dBGain, movGain, mov2Gain, mov3Gain, mov4Gain, musicBus, duckingGain;
-    let masterDest, micMovDest, liveGain, liveDest, analyzer;
-    let peer, isInit = false, isInitializing = false, isDucking = false, isBroadcasting = false;
-    let activeListenerCalls = {};
-    let recorders = {}, chunks = {master:[], micmov:[]};
-    let startTimes = { live: 0, master: 0, micmov: 0 };
-    let intervals = { live: null, master: null, micmov: null };
+    const player = document.getElementById('player');
+    const statusText = document.getElementById('status');
+    const btnConnect = document.getElementById('btn-connect');
     
-    let peerIds = { mov1: null, mov2: null, mov3: null, mov4: null }; 
-    let m1Muted = false, m2Muted = false, m3Muted = false, m4Muted = false;
-
-    let activeDataConns = {};
-
-    // --- VARIABLES PLAYLIST AUTO ---
-    let isAutoPlay = false;
-    let playlistFilesArray = [];
-    let currentAutoIndex = -1;
-
-    function updateMainClock() {
-        const now = new Date();
-        const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-        
-        const fechaLineal = `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
-        const horaLineal = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-        
-        document.getElementById('main-clock').innerText = `${fechaLineal} ${horaLineal}`.toUpperCase();
-    }
+    const HOST_PRIVADO = 'maitino-studio-host-v2';
     
-    updateMainClock();
-    setInterval(updateMainClock, 1000);
+    let peer;
+    let audioCtx;
+    let retryCount = 0;
+    let isConnecting = false;
+    let currentCall = null;
+    let keepAliveInterval = null;
 
-    function formatTime(ms) {
-        let sec = Math.floor(ms / 1000);
-        return `${String(Math.floor(sec / 3600)).padStart(2, '0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
-    }
+    // Requiere interacción humana para saltarse el bloqueo de autoplay
+    btnConnect.addEventListener('click', iniciarSintonizador);
 
-    function formatMinSec(seconds) {
-        if (isNaN(seconds) || !isFinite(seconds)) return "00:00";
-        let m = Math.floor(seconds / 60);
-        let s = Math.floor(seconds % 60);
-        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
+    async function iniciarSintonizador() {
+        if (isConnecting) return;
+        isConnecting = true;
+        
+        btnConnect.disabled = true;
+        btnConnect.innerText = "CONECTANDO...";
+        statusText.innerText = "Iniciando motor de audio...";
 
-    function setupDeckTimers() {
-        ['A', 'B'].forEach(id => {
-            const aud = document.getElementById('aud' + id);
-            const curr = document.getElementById('time-curr-' + id);
-            const tot = document.getElementById('time-tot-' + id);
-            const seek = document.getElementById('seek-' + id);
-
-            aud.addEventListener('loadedmetadata', () => {
-                tot.innerText = formatMinSec(aud.duration);
-                seek.max = aud.duration;
-            });
-            aud.addEventListener('timeupdate', () => {
-                curr.innerText = formatMinSec(aud.currentTime);
-                seek.value = aud.currentTime;
-            });
-
-            // --- EVENTO PARA EL MODO AUTO ---
-            aud.addEventListener('ended', () => {
-                if (isAutoPlay) {
-                    playNextInAuto();
-                }
-            });
-        });
-    }
-    setupDeckTimers();
-
-    function seekDeck(id) {
-        const aud = document.getElementById('aud' + id);
-        const seekVal = document.getElementById('seek-' + id).value;
-        aud.currentTime = seekVal;
-    }
-
-    async function init() {
-        if(isInit) return;
-        if(isInitializing) return; 
-        isInitializing = true;
-
-        try {
+        // 1. Crear / reanudar contexto de audio validado por el usuario
+        if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            musicBus = audioCtx.createGain();
-            duckingGain = audioCtx.createGain(); 
-            musicBus.connect(duckingGain);
+        }
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
 
-            masterGain = audioCtx.createGain();
-            const limiter = audioCtx.createDynamicsCompressor();
-            limiter.threshold.value = -1.0; limiter.knee.value = 0; limiter.ratio.value = 20;
-            
-            duckingGain.connect(masterGain);
-            masterGain.connect(limiter);
-            limiter.connect(audioCtx.destination);
+        conectarPeer();
+    }
 
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 48000 }
+    function conectarPeer() {
+        statusText.innerText = "Buscando servidor...";
+        
+        if (peer) {
+            peer.destroy();
+        }
+
+        peer = new Peer({
+            host: 'maitino-peer-server.onrender.com',
+            port: 443,
+            secure: true,
+            config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] }
+        });
+
+        peer.on('open', (id) => {
+            statusText.innerText = "Conectando al estudio...";
+            
+            // Creamos un stream vacío estrictamente necesario para que PeerJS inicie la llamada
+            const dummyStream = audioCtx.createMediaStreamDestination().stream;
+            
+            // CLAVE: Enviamos el metadato 'role: listener' para que el transmisor nos trate como oyente
+            currentCall = peer.call(HOST_PRIVADO, dummyStream, { metadata: { role: 'listener' } });
+
+            currentCall.on('stream', (remoteStream) => {
+                retryCount = 0; // Éxito: reseteamos el contador de reintentos
+                statusText.innerText = "● EN DIRECTO";
+                statusText.classList.add('on-air');
+                btnConnect.innerText = "SINTONIZADO";
+                
+                player.srcObject = remoteStream;
+                player.play().catch(e => console.error("Error al reproducir:", e));
             });
-            const mSrc = audioCtx.createMediaStreamSource(stream);
-            
-            micGain = audioCtx.createGain(); micGain.gain.value = 0;
-            micComp = audioCtx.createDynamicsCompressor();
-            micComp.threshold.value = -15; micComp.knee.value = 15; micComp.ratio.value = 2.5; 
-            micComp.attack.value = 0.01; micComp.release.value = 0.15;
 
-            mSrc.connect(micComp).connect(micGain).connect(masterGain);
+            currentCall.on('error', (err) => {
+                console.warn("Llamada rechazada o fallida:", err);
+                manejarDesconexion();
+            });
 
-            masterDest = audioCtx.createMediaStreamDestination();
-            micMovDest = audioCtx.createMediaStreamDestination();
-            limiter.connect(masterDest);
+            currentCall.on('close', () => {
+                manejarDesconexion();
+            });
 
-            dAGain = audioCtx.createGain(); dBGain = audioCtx.createGain();
-            audioCtx.createMediaElementSource(document.getElementById('audA')).connect(dAGain).connect(musicBus);
-            audioCtx.createMediaElementSource(document.getElementById('audB')).connect(dBGain).connect(musicBus);
-
-            movGain = audioCtx.createGain(); 
-            mov2Gain = audioCtx.createGain();
-            mov3Gain = audioCtx.createGain();
-            mov4Gain = audioCtx.createGain();
-
-            movGain.connect(masterGain); movGain.connect(micMovDest);
-            mov2Gain.connect(masterGain); mov2Gain.connect(micMovDest);
-            mov3Gain.connect(masterGain); mov3Gain.connect(micMovDest);
-            mov4Gain.connect(masterGain); mov4Gain.connect(micMovDest);
-            
-            micGain.connect(micMovDest); 
-
-            liveGain = audioCtx.createGain(); liveGain.gain.value = 0;
-            liveDest = audioCtx.createMediaStreamDestination();
-            masterGain.connect(liveGain).connect(liveDest);
-
-            analyzer = audioCtx.createAnalyser();
-            micComp.connect(analyzer);
-
-            peer = new Peer('maitino-studio-host', {
-                config: {
-                    'iceServers': [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
+            // Monitorizar el estado profundo del túnel P2P (Detecta si te quedas sin WiFi o 4G)
+            currentCall.peerConnection.addEventListener('iceconnectionstatechange', () => {
+                const state = currentCall.peerConnection.iceConnectionState;
+                if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+                    console.warn("Corte de red detectado (ICE State: " + state + ")");
+                    manejarDesconexion();
                 }
             });
-            
-            peer.on('connection', conn => {
-                activeDataConns[conn.peer] = conn;
+        });
 
-                conn.on('data', data => {
-                    if(data.command === 'check_live') {
-                        if(isBroadcasting && !activeListenerCalls[conn.peer]) {
-                            iniciarLlamadaOyente(conn.peer);
-                        }
-                    }
-                    if(data.type === 'mic_status') {
-                        let statId = null;
-                        if (conn.peer === peerIds.mov1) statId = 'm-stat';
-                        else if (conn.peer === peerIds.mov2) statId = 'm2-stat';
-                        else if (conn.peer === peerIds.mov3) statId = 'm3-stat';
-                        else if (conn.peer === peerIds.mov4) statId = 'm4-stat';
-
-                        if(statId) {
-                            document.getElementById(statId).innerText = data.muted ? "● SILENCIADO EN MÓVIL" : "● ONLINE";
-                            document.getElementById(statId).style.color = data.muted ? "orange" : "#00ffaa";
-                        }
-                    }
-                });
-
-                conn.on('close', () => {
-                    delete activeDataConns[conn.peer];
-                    if(activeListenerCalls[conn.peer]) {
-                        activeListenerCalls[conn.peer].close();
-                        delete activeListenerCalls[conn.peer];
-                    }
-                });
-            });
-
-            peer.on('call', call => {
-                call.answer(masterDest.stream);
-                call.on('stream', s => {
-                    let targetId = null;
-                    if (!document.getElementById('remote-audio').srcObject) targetId = 'remote-audio';
-                    else if (!document.getElementById('remote-audio-2').srcObject) targetId = 'remote-audio-2';
-                    else if (!document.getElementById('remote-audio-3').srcObject) targetId = 'remote-audio-3';
-                    else targetId = 'remote-audio-4';
-
-                    const statId = targetId === 'remote-audio' ? 'm-stat' : targetId === 'remote-audio-2' ? 'm2-stat' : targetId === 'remote-audio-3' ? 'm3-stat' : 'm4-stat';
-                    const gainNode = targetId === 'remote-audio' ? movGain : targetId === 'remote-audio-2' ? mov2Gain : targetId === 'remote-audio-3' ? mov3Gain : mov4Gain;
-
-                    if(targetId === 'remote-audio') peerIds.mov1 = call.peer;
-                    else if(targetId === 'remote-audio-2') peerIds.mov2 = call.peer;
-                    else if(targetId === 'remote-audio-3') peerIds.mov3 = call.peer;
-                    else peerIds.mov4 = call.peer;
-
-                    document.getElementById(targetId).srcObject = s;
-                    const source = audioCtx.createMediaStreamSource(s);
-                    source.connect(gainNode);
-
-                    document.getElementById(statId).innerHTML = "● ONLINE";
-                    document.getElementById(statId).style.color = "#00ffaa";
-                });
-            });
-
-            peer.on('disconnected', () => peer.reconnect());
-
-            isInit = true;
-            isInitializing = false;
-            updateGains();
-            visualize();
-            visualizeExtended(); // Inicia el nuevo analizador de espectro
-            processDucking();
-
-        } catch (error) {
-            isInitializing = false;
-            console.error("Fallo al arrancar el motor de audio:", error);
-            alert("⚠️ FALLO CRÍTICO: Asegúrate de que el micrófono esté permitido.");
-        }
-    }
-
-    function iniciarLlamadaOyente(peerId) {
-        let call = peer.call(peerId, liveDest.stream);
-        activeListenerCalls[peerId] = call;
-        call.on('close', () => { delete activeListenerCalls[peerId]; });
-        call.on('error', () => { delete activeListenerCalls[peerId]; });
-    }
-
-    function updateGains() {
-        if(!isInit) return;
-        micGain.gain.setTargetAtTime(document.getElementById('b-mic').classList.contains('active') ? document.getElementById('v-mic').value : 0, audioCtx.currentTime, 0.05);
-        dAGain.gain.value = document.getElementById('v-da').value;
-        dBGain.gain.value = document.getElementById('v-db').value;
+        peer.on('error', (err) => {
+            console.error("Error de conexión al servidor:", err);
+            manejarDesconexion();
+        });
         
-        movGain.gain.value = m1Muted ? 0 : document.getElementById('v-mov').value;
-        mov2Gain.gain.value = m2Muted ? 0 : document.getElementById('v-mov2').value;
-        mov3Gain.gain.value = m3Muted ? 0 : document.getElementById('v-mov3').value;
-        mov4Gain.gain.value = m4Muted ? 0 : document.getElementById('v-mov4').value;
+        peer.on('disconnected', () => {
+            // Si el servidor inactivo nos corta, nos reconectamos silenciosamente al servidor base
+            if (!peer.destroyed) {
+                peer.reconnect();
+            }
+        });
+
+        // Ping para mantener la conexión viva con el servidor de Render y que no nos expulse
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = setInterval(() => {
+            if (peer && !peer.disconnected && !peer.destroyed) {
+                peer.socket.send({ type: 'PING' });
+            }
+        }, 15000); 
+    }
+
+    function manejarDesconexion() {
+        if (!isConnecting && player.paused) return; // Evitar bucles dobles
         
-        masterGain.gain.value = document.getElementById('v-mas').value;
-    }
-
-    async function toggleMic() {
-        await init();
-        if(!isInit) return;
-        document.getElementById('b-mic').classList.toggle('active');
-        document.getElementById('b-mic').innerText = document.getElementById('b-mic').classList.contains('active') ? "ABIERTO" : "CERRADO";
-        updateGains();
-    }
-
-    async function toggleMov(num) {
-        await init();
-        if(!isInit) return;
-        if(num === 1) {
-            m1Muted = !m1Muted;
-            document.getElementById('b-mov1').innerText = m1Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov1').classList.toggle('active', m1Muted);
-        } else if (num === 2) {
-            m2Muted = !m2Muted;
-            document.getElementById('b-mov2').innerText = m2Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov2').classList.toggle('active', m2Muted);
-        } else if (num === 3) {
-            m3Muted = !m3Muted;
-            document.getElementById('b-mov3').innerText = m3Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov3').classList.toggle('active', m3Muted);
-        } else if (num === 4) {
-            m4Muted = !m4Muted;
-            document.getElementById('b-mov4').innerText = m4Muted ? "CERRADO" : "ABIERTO";
-            document.getElementById('b-mov4').classList.toggle('active', m4Muted);
+        isConnecting = false;
+        statusText.classList.remove('on-air');
+        statusText.innerText = "Señal perdida. Reconectando...";
+        btnConnect.innerText = "RECONECTANDO...";
+        btnConnect.disabled = true;
+        
+        player.pause();
+        player.srcObject = null;
+        
+        if (currentCall) {
+            currentCall.close();
+            currentCall = null;
         }
-        updateGains();
-    }
 
-    function toggleDucking() {
-        isDucking = !isDucking;
-        const b = document.getElementById('b-duck');
-        b.classList.toggle('active');
-        b.innerText = isDucking ? "AUTO-DUCKING ON" : "AUTO-DUCKING OFF";
-    }
-
-    function processDucking() {
-        const data = new Uint8Array(analyzer.frequencyBinCount);
-        const check = () => {
-            if(isDucking && document.getElementById('b-mic').classList.contains('active')) {
-                analyzer.getByteFrequencyData(data);
-                let avg = data.reduce((a,b) => a+b)/data.length;
-                let target = avg > 20 ? 0.4 : 1.0;
-                duckingGain.gain.setTargetAtTime(target, audioCtx.currentTime, 0.15);
+        // Sistema de Reconexión Inteligente (Exponential Backoff)
+        // Intentará a los 2s, 4s, 8s, 16s, hasta un tope de 30s por intento
+        const retraso = Math.min(2000 * Math.pow(2, retryCount), 30000);
+        retryCount++;
+        
+        console.log(`Reintentando conexión en ${retraso/1000} segundos... (Intento ${retryCount})`);
+        
+        setTimeout(() => {
+            if (audioCtx && audioCtx.state === 'running') {
+                conectarPeer();
             } else {
-                duckingGain.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.2);
+                // Si el navegador congeló la pestaña, pedimos pulsar de nuevo
+                statusText.innerText = "Emisión detenida";
+                btnConnect.innerText = "REANUDAR CONEXIÓN";
+                btnConnect.disabled = false;
             }
-            requestAnimationFrame(check);
-        };
-        check();
-    }
-
-    async function loadD(id, input) { 
-        await init(); 
-        if(!isInit) return;
-        document.getElementById('aud'+id).src = URL.createObjectURL(input.files[0]); 
-    }
-    
-    function playDeck(id) {
-        const p = document.getElementById('aud'+id);
-        const b = document.getElementById('p'+id);
-        if(p.paused) { p.play(); b.innerHTML = '<i class="fas fa-pause"></i>'; }
-        else { p.pause(); b.innerHTML = '<i class="fas fa-play"></i>'; }
-    }
-
-    function restartDeck(id) {
-        document.getElementById('aud'+id).currentTime = 0;
-    }
-
-    function toggleLoop(id) {
-        const p = document.getElementById('aud'+id);
-        const b = document.getElementById('l'+id);
-        p.loop = !p.loop;
-        b.classList.toggle('active', p.loop);
-    }
-
-    async function toggleLive() {
-        await init(); 
-        if(!isInit) return; 
-
-        const b = document.getElementById('b-live');
-        if(!isBroadcasting) {
-            isBroadcasting = true;
-            liveGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 2);
-            b.innerText = "● EN EL AIRE"; b.style.background = "red";
-            startTimes.live = Date.now();
-            intervals.live = setInterval(() => document.getElementById('t-live').innerText = `📡 EN AIRE: ${formatTime(Date.now() - startTimes.live)}`, 1000);
-
-            for(let peerId in activeDataConns) {
-                if(!activeListenerCalls[peerId]) {
-                    iniciarLlamadaOyente(peerId);
-                }
-            }
-        } else {
-            isBroadcasting = false;
-            liveGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
-            
-            Object.values(activeListenerCalls).forEach(call => call.close());
-            activeListenerCalls = {};
-            
-            setTimeout(() => { b.innerText = "CONECTAR ANTENA"; b.style.background = "#00e676"; }, 2000);
-            clearInterval(intervals.live);
-            document.getElementById('t-live').innerText = "📡 EN AIRE: OFF";
-        }
-    }
-
-    async function rec(type) {
-        await init(); 
-        if(!isInit) return;
-
-        const b = document.getElementById('r-'+(type === 'master' ? 'mas' : type));
-        if(!recorders[type]) {
-            const st = (type === 'master') ? masterDest.stream : micMovDest.stream;
-            recorders[type] = new MediaRecorder(st, { audioBitsPerSecond: 256000 }); 
-            chunks[type] = [];
-            recorders[type].ondataavailable = e => chunks[type].push(e.data);
-            recorders[type].onstop = () => {
-                const blob = new Blob(chunks[type], {type: 'audio/webm'});
-                const a = document.createElement('a'); 
-                a.href = URL.createObjectURL(blob);
-                
-                let customPrefix = document.getElementById('rec-filename').value.trim();
-                if(!customPrefix) customPrefix = "MAITINO";
-                a.download = `${customPrefix}_${type.toUpperCase()}_${Date.now()}.webm`; 
-                
-                a.click();
-            };
-            recorders[type].start(); b.classList.add('active');
-            startTimes[type] = Date.now();
-            intervals[type] = setInterval(() => document.getElementById('t-'+type).innerText = `🔴 ${type.toUpperCase()}: ${formatTime(Date.now() - startTimes[type])}`, 1000);
-        } else {
-            recorders[type].stop(); delete recorders[type]; b.classList.remove('active');
-            clearInterval(intervals[type]);
-        }
-    }
-
-    function visualize() {
-        const vAn = audioCtx.createAnalyser(); masterGain.connect(vAn);
-        const cv = document.getElementById('cv-master'); const ct = cv.getContext('2d');
-        const d = new Uint8Array(vAn.frequencyBinCount);
-        const frame = () => {
-            requestAnimationFrame(frame); vAn.getByteFrequencyData(d);
-            ct.fillStyle = '#000'; ct.fillRect(0,0,cv.width,cv.height);
-            ct.fillStyle = '#00ffaa';
-            for(let i=0; i<d.length; i+=12) ct.fillRect(i/4, cv.height, 3, -d[i]/4);
-        };
-        frame();
-    }
-
-    // --- NUEVAS FUNCIONALIDADES INFERIORES ---
-
-    function visualizeExtended() {
-        const vAnExt = audioCtx.createAnalyser();
-        vAnExt.fftSize = 512; // Mayor resolución para la onda
-        masterGain.connect(vAnExt);
-        
-        const cvExt = document.getElementById('cv-extended');
-        const ctExt = cvExt.getContext('2d');
-        
-        // Ajustar a la pantalla
-        cvExt.width = cvExt.offsetWidth * 2; 
-        cvExt.height = cvExt.offsetHeight * 2;
-        
-        const bufferLength = vAnExt.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-
-        // Crear gradiente profesional (estilo espectrómetro de estudio)
-        const gradient = ctExt.createLinearGradient(0, cvExt.height, 0, 0);
-        gradient.addColorStop(0, '#00ffaa'); // Verde (Seguro)
-        gradient.addColorStop(0.6, '#00b3ff'); // Azul (Medios)
-        gradient.addColorStop(1, '#ff1a1a'); // Rojo (Picos)
-
-        const draw = () => {
-            requestAnimationFrame(draw);
-            vAnExt.getByteFrequencyData(dataArray);
-            
-            // Efecto de rastro suave
-            ctExt.fillStyle = 'rgba(3, 3, 5, 0.6)';
-            ctExt.fillRect(0, 0, cvExt.width, cvExt.height);
-            
-            const barWidth = (cvExt.width / bufferLength) * 1.5;
-            let x = 0;
-            
-            // Añadir un resplandor "glow" a las ondas
-            ctExt.shadowBlur = 10;
-            ctExt.shadowColor = 'rgba(0, 255, 170, 0.3)';
-            ctExt.fillStyle = gradient;
-            
-            for(let i = 0; i < bufferLength; i++) {
-                const barHeight = (dataArray[i] / 255) * cvExt.height;
-                
-                ctExt.beginPath();
-                // Usar bordes redondeados si el navegador lo soporta, para un look más moderno
-                if(ctExt.roundRect) {
-                    ctExt.roundRect(x, cvExt.height - barHeight, barWidth - 1, barHeight, [3, 3, 0, 0]);
-                } else {
-                    ctExt.rect(x, cvExt.height - barHeight, barWidth - 1, barHeight);
-                }
-                ctExt.fill();
-                
-                x += barWidth;
-            }
-        };
-        draw();
-    }
-
-    // --- LÓGICA MODO AUTO ---
-    function toggleAutoPlay() {
-        isAutoPlay = !isAutoPlay;
-        const btn = document.getElementById('btn-autoplay');
-        btn.classList.toggle('active', isAutoPlay);
-        btn.innerText = isAutoPlay ? "MODO AUTO: ON" : "MODO AUTO: OFF";
-        
-        if (isAutoPlay && playlistFilesArray.length > 0) {
-            const audA = document.getElementById('audA');
-            const audB = document.getElementById('audB');
-            if (audA.paused && audB.paused) {
-                playNextInAuto();
-            }
-        }
-    }
-
-    function playNextInAuto() {
-        if (!isAutoPlay || playlistFilesArray.length === 0) return;
-        
-        currentAutoIndex++;
-        if (currentAutoIndex >= playlistFilesArray.length) {
-            currentAutoIndex = 0; // Reiniciar playlist
-        }
-        
-        const file = playlistFilesArray[currentAutoIndex];
-        
-        init().then(() => {
-            const audA = document.getElementById('audA');
-            audA.src = URL.createObjectURL(file);
-            
-            // Forzar quitar el loop individual para que pueda saltar de canción automáticamente
-            audA.loop = false;
-            document.getElementById('lA').classList.remove('active');
-            
-            audA.play();
-            document.getElementById('pA').innerHTML = '<i class="fas fa-pause"></i>';
-        });
-    }
-
-    // Lógica para la Playlist Rápida
-    function handlePlaylistUpload(input) {
-        const files = Array.from(input.files);
-        // Añadir a nuestra matriz global para el Modo Automático
-        playlistFilesArray = playlistFilesArray.concat(files);
-        
-        const list = document.getElementById('pl-list');
-        const emptyMsg = document.getElementById('pl-empty');
-        
-        if(files.length > 0 && emptyMsg) {
-            emptyMsg.remove();
-        }
-
-        files.forEach(file => {
-            const li = document.createElement('li');
-            li.className = 'playlist-item';
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.innerText = file.name.length > 30 ? file.name.substring(0, 30) + '...' : file.name;
-            nameSpan.title = file.name;
-
-            const actions = document.createElement('div');
-            actions.className = 'pl-actions';
-
-            const btnA = document.createElement('button');
-            btnA.innerText = 'Cargar en A';
-            btnA.onclick = async () => {
-                await init();
-                document.getElementById('audA').src = URL.createObjectURL(file);
-            };
-
-            const btnB = document.createElement('button');
-            btnB.innerText = 'Cargar en B';
-            btnB.onclick = async () => {
-                await init();
-                document.getElementById('audB').src = URL.createObjectURL(file);
-            };
-
-            actions.appendChild(btnA);
-            actions.appendChild(btnB);
-            li.appendChild(nameSpan);
-            li.appendChild(actions);
-            list.appendChild(li);
-        });
+        }, retraso);
     }
 </script>
 </body>
