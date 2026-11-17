@@ -1098,19 +1098,17 @@
     }
     
     // Función Mejorada para Evitar Cuelgues en Enlaces
-    async function loadUrl(id, type) {
-        await init(); 
+    function loadUrl(id, type) {
         const urlInput = document.getElementById('url-' + type + '-' + id).value.trim(); 
         if(!urlInput) return;
         
-        // Si es diferido ('vod'), el motor lo trata internamente exactamente igual que un 'file'
+        // Si es diferido ('vod'), lo pasamos como 'file' para que se comporte EXACTAMENTE como un archivo
         setDeckVisualMode(id, type === 'live' ? 'url-live' : 'file'); 
         const aud = document.getElementById('aud' + id); 
         
-        aud.pause();
         aud.src = urlInput; 
-        aud.load();
-        playDeck(id); // Autoejecutar directamente para evitar que el navegador bloquee el autoplay
+        playDeck(id); // Play directo sin awaits para mantener el click del usuario
+        init(); // Iniciar sistema de audio por debajo
     }
     
     async function playDeck(id) {
