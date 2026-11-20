@@ -314,7 +314,7 @@
                 </div>
                 <div class="deck-timer-container"><span id="time-curr-A">00:00:00</span><span id="time-tot-A">00:00:00</span></div>
                 <input type="range" class="seek-bar" id="seek-A" min="0" max="100" value="0" step="0.1" oninput="seekDeck('A')">
-                <audio id="audA" crossorigin="anonymous" loop></audio>
+                <audio id="audA" crossorigin="anonymous" preload="auto" loop></audio>
             </div>
 
             <!-- DECK B -->
@@ -350,7 +350,7 @@
                 </div>
                 <div class="deck-timer-container"><span id="time-curr-B">00:00:00</span><span id="time-tot-B">00:00:00</span></div>
                 <input type="range" class="seek-bar" id="seek-B" min="0" max="100" value="0" step="0.1" oninput="seekDeck('B')">
-                <audio id="audB" crossorigin="anonymous" loop></audio>
+                <audio id="audB" crossorigin="anonymous" preload="auto" loop></audio>
             </div>
 
             <!-- MASTER Y VISUALIZADOR PRINCIPAL -->
@@ -780,11 +780,34 @@
             privateServerInit = true;
             btnInit.innerText = "SISTEMA INICIADO";
             btnInit.classList.add('active');
+
+            // SISTEMA DE REFRESCO INTERNO Y MANTENIMIENTO DE SEÑAL (Keep-Alive)
+            // Monitoriza y fuerza la reconexión al servidor de señalización si se pierde inactividad,
+            // garantizando que el receptor se pueda conectar en cualquier momento sin cortes, aunque pasen horas.
+            setInterval(() => {
+                if (peerPrivate && peerPrivate.disconnected && !peerPrivate.destroyed) {
+                    console.log("Refrescando conexión del transmisor para aceptar nuevos oyentes...");
+                    peerPrivate.reconnect();
+                }
+            }, 10000);
+        });
+
+        // Evento de desconexión: reactivación inmediata
+        peerPrivate.on('disconnected', () => {
+            if (peerPrivate && !peerPrivate.destroyed) {
+                peerPrivate.reconnect();
+            }
         });
         
-        peerPrivate.on('error', () => {
-            btnInit.innerText = "ERROR EN SERVIDOR";
-            setTimeout(() => { btnInit.innerText = "INICIAR SISTEMA (SERVIDOR PRIVADO)"; }, 3000);
+        peerPrivate.on('error', (err) => {
+            console.error("PeerJS Error:", err);
+            // Intentar reconectar si es error de red en lugar de tirar la interfaz
+            if(err.type === 'network' || err.type === 'server-error' || err.type === 'unavailable-id') {
+                setTimeout(() => { if (!peerPrivate.destroyed && peerPrivate.disconnected) peerPrivate.reconnect(); }, 5000);
+            } else {
+                btnInit.innerText = "ERROR EN SERVIDOR";
+                setTimeout(() => { btnInit.innerText = "INICIAR SISTEMA (SERVIDOR PRIVADO)"; }, 3000);
+            }
         });
         
         // Array para rastrear qué canales móviles están en uso
@@ -1097,7 +1120,7 @@
         document.getElementById('aud'+id).src = URL.createObjectURL(input.files[0]); 
     }
     
-    // Función Mejorada para Evitar Cuelgues en Enlaces
+    // Función Mejorada para Evitar Cuelgues en Enlaces y VOD
     function loadUrl(id, type) {
         const urlInput = document.getElementById('url-' + type + '-' + id).value.trim(); 
         if(!urlInput) return;
@@ -1107,6 +1130,12 @@
         const aud = document.getElementById('aud' + id); 
         
         aud.src = urlInput; 
+        
+        // Forzamos la lectura inmediata del búfer a máxima capacidad para garantizar la universalidad en MP3/MP4 (VOD)
+        if (type === 'vod') {
+            aud.load(); 
+        }
+
         playDeck(id); // Play directo sin awaits para mantener el click del usuario
         init(); // Iniciar sistema de audio por debajo
     }
